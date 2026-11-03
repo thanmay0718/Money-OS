@@ -1,0 +1,31 @@
+.kinetic-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.kinetic-grid::before {
+  position: absolute;
+  inset: -50%;
+  background-image:
+    linear-gradient(rgba(195, 171, 250, 0.075) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(195, 171, 250, 0.075) 1px, transparent 1px);
+  background-size: 64px 64px;
+  content: '';
+  mask-image: radial-gradient(ellipse at center, #000 0%, transparent 72%);
+  animation: kinetic-grid-drift 36s linear infinite;
+}
+
+@keyframes kinetic-grid-drift {
+  to {
+    transform: translate3d(64px, 64px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kinetic-grid::before {
+    animation: none;
+  }
+}
