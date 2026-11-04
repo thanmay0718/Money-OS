@@ -7,6 +7,7 @@ import {
   Bell,
   UserRound,
   LayoutDashboard,
+  Activity,
   ArrowLeftRight,
   Wallet,
   Tags,
@@ -166,6 +167,12 @@ export default function TopBar() {
       icon: <LayoutDashboard className="w-4 h-4 text-[#C3ABFA]" />,
     },
     {
+      to: '/overview',
+      label: 'Activity Overview',
+      desc: 'Financial habits, streaks & activity ledger',
+      icon: <Activity className="w-4 h-4 text-[#C3ABFA]" />,
+    },
+    {
       to: '/transactions',
       label: 'Transactions Ledger',
       desc: 'Inflows, debits & inter-pocket transfers',
@@ -194,6 +201,7 @@ export default function TopBar() {
   // Search items database for genuine search palette
   const searchableItems = [
     { id: 'dash', label: 'Dashboard Overview', path: '/', category: 'Views', icon: <LayoutDashboard className="w-4 h-4 text-[#C3ABFA]" /> },
+    { id: 'overview', label: 'Activity Overview & Progress', path: '/overview', category: 'Views', icon: <Activity className="w-4 h-4 text-[#C3ABFA]" /> },
     { id: 'tx', label: 'Transactions History', path: '/transactions', category: 'Views', icon: <ArrowLeftRight className="w-4 h-4 text-[#86B8F5]" /> },
     { id: 'new-tx', label: 'Record New Transaction', path: '/transactions', category: 'Actions', icon: <ArrowLeftRight className="w-4 h-4 text-[#70D6A3]" /> },
     { id: 'pockets', label: 'Manage Money Pockets', path: '/pockets', category: 'Views', icon: <Wallet className="w-4 h-4 text-[#C3ABFA]" /> },
@@ -222,7 +230,8 @@ export default function TopBar() {
         handleSearchSelect(filteredSearch[0].path)
       } else {
         const lower = query.toLowerCase()
-        if (lower.includes('transaction')) navigate('/transactions')
+        if (lower.includes('overview') || lower.includes('streak') || lower.includes('heatmap') || lower.includes('activity')) navigate('/overview')
+        else if (lower.includes('transaction')) navigate('/transactions')
         else if (lower.includes('pocket')) navigate('/pockets')
         else if (lower.includes('category')) navigate('/categories')
         else if (lower.includes('setting')) navigate('/settings')

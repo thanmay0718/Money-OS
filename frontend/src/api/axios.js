@@ -1,6 +1,7 @@
 // src/api/axios.js
 import axios from 'axios'
 import { toast } from '../lib/toast'
+import { announceBackendStatus } from '../lib/backendStatus'
 
 // Use configurable API base URL, defaulting to relative for Vite proxy
 const api = axios.create({
@@ -21,8 +22,17 @@ api.interceptors.request.use((config) => {
 
 // Intercept responses to handle 401 / 403 cleanly
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    announceBackendStatus(response.status)
+    return response
+  },
   (error) => {
+    if (error.response) {
+      announceBackendStatus(error.response.status)
+    } else if (error.code !== 'ERR_CANCELED') {
+      announceBackendStatus(null)
+    }
+
     if (error.response && error.response.status === 401) {
       const currentPath = window.location.pathname
       // Clear invalid credentials

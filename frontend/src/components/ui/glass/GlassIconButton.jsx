@@ -26,10 +26,10 @@ export default function GlassIconButton({
 
   const variantClasses = {
     default: active
-      ? 'bg-[#D6B875]/25 text-[#D6B875] border-[#D6B875]/50 shadow-[0_0_15px_rgba(214,184,117,0.3)]'
-      : 'glass-pill text-[#A5A5A0] hover:text-[#F5F3ED] hover:bg-[#292B2E] hover:border-[rgba(241,223,177,0.2)]',
+      ? 'bg-[#C3ABFA]/20 text-[#D5C5FF] border-[#C3ABFA]/40 shadow-[0_0_15px_rgba(195,171,250,0.25)]'
+      : 'glass-pill text-[#A3A3A3] hover:text-[#FAFAFA] hover:bg-[#292929] hover:border-[#C3ABFA]/25',
     accent:
-      'bg-[#D6B875] text-[#171512] font-semibold border border-[#F1DFB1]/30 shadow-[0_2px_12px_rgba(214,184,117,0.4)] hover:bg-[#F1DFB1]',
+      'bg-[#C3ABFA] text-[#18151F] font-semibold border border-[#D5C5FF]/30 shadow-[0_2px_12px_rgba(195,171,250,0.3)] hover:bg-[#D5C5FF]',
     danger:
       'bg-[#F08080]/15 text-[#F08080] border border-[#F08080]/30 hover:bg-[#F08080]/25 hover:border-[#F08080]/50',
   }[variant] || 'glass-pill text-[#A5A5A0]'

@@ -56,13 +56,13 @@ export default function GlassModal({
       <GlassSurface
         ref={modalRef}
         variant="elevated"
-        className={`relative z-10 w-full ${maxWidth} rounded-t-3xl sm:rounded-3xl border border-[rgba(241,223,177,0.18)] bg-[#1B1D20]/95 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(241,223,177,0.2)] p-6 sm:p-7 max-h-[92vh] flex flex-col transition-all duration-300 animate-in fade-in zoom-in-95 ${className}`}
+        className={`relative z-10 w-full ${maxWidth} rounded-t-3xl sm:rounded-3xl border border-[#C3ABFA]/20 bg-[#181818]/95 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(195,171,250,0.12)] p-6 sm:p-7 max-h-[92vh] flex flex-col transition-all duration-300 animate-in fade-in zoom-in-95 ${className}`}
       >
         {/* Mobile Pull Handle Indicator */}
         <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-4 sm:hidden" />
 
         {/* Modal Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-[rgba(241,223,177,0.12)] mb-5">
+        <div className="flex items-start justify-between pb-4 border-b border-white/[0.08] mb-5">
           <div>
             {title && (
               <h2 id="glass-modal-title" className="text-lg sm:text-xl font-semibold text-[#F5F3ED] tracking-tight">

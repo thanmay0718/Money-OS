@@ -1,5 +1,6 @@
 package com.moneyos.dto.response;
 
+import com.moneyos.enums.GoalPriority;
 import com.moneyos.enums.GoalStatus;
 
 import java.math.BigDecimal;
@@ -16,7 +17,11 @@ public record FinancialGoalResponse(
         String currency,
         LocalDate targetDate,
         GoalStatus status,
+        GoalPriority priority,
         BigDecimal progressPercentage,
+        LocalDate predictedCompletionDate,
+        BigDecimal recommendedMonthlyContribution,
+        String milestoneMessage,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -43,7 +48,11 @@ public record FinancialGoalResponse(
                 currency,
                 targetDate,
                 status,
+                GoalPriority.MEDIUM,
                 progressPercentage,
+                null,
+                null,
+                null,
                 createdAt,
                 updatedAt
         );

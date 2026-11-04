@@ -4,6 +4,7 @@ import com.moneyos.dto.request.FinancialGoalRequest;
 import com.moneyos.dto.response.FinancialGoalResponse;
 import com.moneyos.entity.FinancialGoal;
 import com.moneyos.entity.User;
+import com.moneyos.enums.GoalPriority;
 import com.moneyos.enums.GoalStatus;
 import com.moneyos.exception.ResourceNotFoundException;
 import com.moneyos.repository.FinancialGoalRepository;
@@ -54,7 +55,8 @@ class FinancialGoalServiceImplTest {
                 new BigDecimal("100000.00"),
                 new BigDecimal("20000.00"),
                 "INR",
-                LocalDate.now().plusMonths(6)
+                LocalDate.now().plusMonths(6),
+                GoalPriority.MEDIUM
         );
 
         when(goalRepository.save(any(FinancialGoal.class)))
@@ -73,7 +75,8 @@ class FinancialGoalServiceImplTest {
                 new BigDecimal("50000.00"),
                 new BigDecimal("50000.00"),
                 "INR",
-                LocalDate.now().plusMonths(1)
+                LocalDate.now().plusMonths(1),
+                GoalPriority.MEDIUM
         );
 
         when(goalRepository.save(any(FinancialGoal.class)))
@@ -92,7 +95,8 @@ class FinancialGoalServiceImplTest {
                 new BigDecimal("50000.00"),
                 new BigDecimal("55000.00"),
                 "INR",
-                LocalDate.now().plusMonths(1)
+                LocalDate.now().plusMonths(1),
+                GoalPriority.HIGH
         );
 
         when(goalRepository.save(any(FinancialGoal.class)))
@@ -111,7 +115,8 @@ class FinancialGoalServiceImplTest {
                 new BigDecimal("50000.00"),
                 new BigDecimal("20000.00"),
                 "INR",
-                LocalDate.now().minusDays(5)
+                LocalDate.now().minusDays(5),
+                GoalPriority.LOW
         );
 
         when(goalRepository.save(any(FinancialGoal.class)))
@@ -129,6 +134,7 @@ class FinancialGoalServiceImplTest {
                 new BigDecimal("0.00"),
                 BigDecimal.ZERO,
                 "INR",
+                null,
                 null
         );
 
@@ -141,6 +147,7 @@ class FinancialGoalServiceImplTest {
                 new BigDecimal("1000.00"),
                 new BigDecimal("-50.00"),
                 "INR",
+                null,
                 null
         );
 
@@ -157,6 +164,7 @@ class FinancialGoalServiceImplTest {
         FinancialGoalRequest request = new FinancialGoalRequest(
                 "Updated",
                 new BigDecimal("20000.00"),
+                null,
                 null,
                 null,
                 null

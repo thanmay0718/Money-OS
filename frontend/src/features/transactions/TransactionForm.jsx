@@ -200,14 +200,14 @@ export default function TransactionForm() {
 
   return (
     <GlassSurface className="p-6 relative overflow-hidden border-[#292929] bg-[#181818]/90">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-[#292929]">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4 border-b border-[#292929]">
         <div>
           <h2 className="text-lg font-semibold text-[#FAFAFA] tracking-tight">Record Transaction</h2>
           <p className="text-xs text-[#A3A3A3] mt-0.5">
             Log income, day-to-day spending, or move money between pockets
           </p>
         </div>
-        <div>
+        <div className="w-full lg:w-auto overflow-x-auto">
           <GlassSegmentedControl
             options={typeOptions}
             value={type}

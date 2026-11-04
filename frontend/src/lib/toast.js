@@ -46,7 +46,7 @@ export const toast = {
     return sileo.success({
       title: title || 'Changes saved successfully.',
       description: description ? String(description) : undefined,
-      duration: 4000,
+      duration: 3500,
     })
   },
 
@@ -61,7 +61,7 @@ export const toast = {
     return sileo.error({
       title: title || "We couldn't save your changes. Please try again.",
       description: cleanDesc,
-      duration: 5500, // Longer duration for users to read error details
+      duration: 4000,
     })
   },
 
@@ -75,7 +75,7 @@ export const toast = {
     return sileo.warning({
       title: title || 'Please review your input.',
       description: description ? String(description) : undefined,
-      duration: 4500,
+      duration: 4000,
     })
   },
 
@@ -89,7 +89,7 @@ export const toast = {
     return sileo.info({
       title: title || 'Notice',
       description: description ? String(description) : undefined,
-      duration: 4000,
+      duration: 3500,
     })
   },
 
@@ -98,17 +98,28 @@ export const toast = {
    * Automatically reflects loading -> success or error state.
    */
   promise: (promise, { loading, success, error }) => {
+    const withDuration = (options, duration) => {
+      const resolved = typeof options === 'function' ? options : () => options
+      return (...args) => {
+        const result = resolved(...args) || {}
+        return { ...result, duration: result.duration ?? duration }
+      }
+    }
+
     return sileo.promise(promise, {
-      loading: typeof loading === 'string' ? { title: loading } : loading,
-      success: typeof success === 'string' ? { title: success } : success,
+      loading: typeof loading === 'string'
+        ? { title: loading, duration: null }
+        : { ...loading, duration: loading?.duration ?? null },
+      success: withDuration(success, 2500),
       error: (err) => {
         const errorDesc = sanitizeErrorMessage(err)
         if (typeof error === 'function') {
-          return error(err)
+          return withDuration(error, 3500)(err)
         }
         return {
           title: error?.title || "We couldn't complete your request.",
           description: error?.description || errorDesc,
+          duration: error?.duration ?? 3500,
         }
       },
     })

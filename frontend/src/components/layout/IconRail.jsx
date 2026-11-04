@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import {
   LayoutDashboard,
+  Activity,
   ArrowLeftRight,
   Wallet,
   Tags,
@@ -27,7 +28,8 @@ export default function IconRail() {
   const showOnboardingHighlight = onboardingStatus === 'succeeded' && !onboardingCompleted
 
   const navItems = [
-    { to: '/',             label: 'Overview',      icon: <LayoutDashboard className="w-5 h-5" /> },
+    { to: '/',             label: 'Dashboard',     icon: <LayoutDashboard className="w-5 h-5" /> },
+    { to: '/overview',     label: 'Overview',      icon: <Activity className="w-5 h-5" /> },
     { to: '/transactions', label: 'Transactions',  icon: <ArrowLeftRight className="w-5 h-5" /> },
     { to: '/pockets',      label: 'Pockets',       icon: <Wallet className="w-5 h-5" /> },
     { to: '/categories',   label: 'Categories',    icon: <Tags className="w-5 h-5" /> },

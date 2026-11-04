@@ -46,6 +46,14 @@ public class TransactionController {
                 userId, pageable);
     }
 
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTransaction(
+            @PathVariable UUID id,
+            Authentication authentication) {
+        UUID userId = getAuthenticatedUserId(authentication);
+        transactionService.deleteTransaction(userId, id);
+    }
 
     private UUID getAuthenticatedUserId(Authentication authentication) {
 

@@ -5,8 +5,12 @@ import pocketsReducer from '../features/pockets/pocketsSlice'
 import transactionsReducer from '../features/transactions/transactionsSlice'
 import categoriesReducer from '../features/categories/categoriesSlice'
 import adminReducer from '../features/admin/adminSlice'
-import onboardingReducer from '../features/onboarding/onboardingSlice';
-import dashboardReducer from '../features/dashboard/dashboardSlice';
+import onboardingReducer from '../features/onboarding/onboardingSlice'
+import dashboardReducer from '../features/dashboard/dashboardSlice'
+import budgetReducer from '../features/budget/budgetSlice'
+import recurringReducer from '../features/recurring/recurringSlice'
+import netWorthReducer from '../features/networth/netWorthSlice'
+import overviewReducer from '../features/overview/overviewSlice'
 
 const appReducer = combineReducers({
   auth: authReducer,
@@ -16,6 +20,10 @@ const appReducer = combineReducers({
   admin: adminReducer,
   onboarding: onboardingReducer,
   dashboard: dashboardReducer,
+  budget: budgetReducer,
+  recurring: recurringReducer,
+  networth: netWorthReducer,
+  overview: overviewReducer,
 })
 
 const rootReducer = (state, action) => {
@@ -36,6 +44,10 @@ const rootReducer = (state, action) => {
       admin: undefined,
       dashboard: undefined,
       onboarding: undefined,
+      budget: undefined,
+      recurring: undefined,
+      networth: undefined,
+      overview: undefined,
     }
   }
   return appReducer(state, action)

@@ -19,12 +19,54 @@ export const fetchDashboardInsights = createAsyncThunk(
   }
 )
 
+export const fetchDashboardSummary = createAsyncThunk(
+  'dashboard/fetchSummary',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/api/profile/dashboard-summary')
+      return response.data
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Failed to load dashboard summary'
+      return rejectWithValue(message)
+    }
+  }
+)
+
+export const fetchEmergencyFund = createAsyncThunk(
+  'dashboard/fetchEmergencyFund',
+  async (targetMonths, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/api/profile/emergency-fund', {
+        params: targetMonths ? { targetMonths } : {},
+      })
+      return response.data
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Failed to load emergency fund data'
+      return rejectWithValue(message)
+    }
+  }
+)
+
 const initialState = {
   profile: null,
   budgetSuggestion: null,
   goalProgress: [],
+  summary: null,
+  emergencyFund: null,
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  summaryStatus: 'idle',
+  emergencyStatus: 'idle',
   error: null,
+  summaryError: null,
+  emergencyError: null,
 }
 
 const dashboardSlice = createSlice({
@@ -54,6 +96,36 @@ const dashboardSlice = createSlice({
       .addCase(fetchDashboardInsights.rejected, (state, action) => {
         state.status = 'failed'
         state.error = action.payload || 'Failed to load financial insights'
+      })
+
+      // Dashboard Summary
+      .addCase(fetchDashboardSummary.pending, (state) => {
+        state.summaryStatus = 'loading'
+        state.summaryError = null
+      })
+      .addCase(fetchDashboardSummary.fulfilled, (state, action) => {
+        state.summaryStatus = 'succeeded'
+        state.summary = action.payload
+        state.summaryError = null
+      })
+      .addCase(fetchDashboardSummary.rejected, (state, action) => {
+        state.summaryStatus = 'failed'
+        state.summaryError = action.payload || 'Failed to load dashboard summary'
+      })
+
+      // Emergency Fund
+      .addCase(fetchEmergencyFund.pending, (state) => {
+        state.emergencyStatus = 'loading'
+        state.emergencyError = null
+      })
+      .addCase(fetchEmergencyFund.fulfilled, (state, action) => {
+        state.emergencyStatus = 'succeeded'
+        state.emergencyFund = action.payload
+        state.emergencyError = null
+      })
+      .addCase(fetchEmergencyFund.rejected, (state, action) => {
+        state.emergencyStatus = 'failed'
+        state.emergencyError = action.payload || 'Failed to load emergency fund data'
       })
   },
 })

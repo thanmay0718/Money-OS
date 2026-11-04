@@ -1,5 +1,6 @@
 package com.moneyos.dto.request;
 
+import com.moneyos.enums.GoalPriority;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,5 +24,7 @@ public record FinancialGoalRequest(
         @Size(max = 3, message = "Currency code must be 3 characters")
         String currency,
 
-        LocalDate targetDate
+        LocalDate targetDate,
+
+        GoalPriority priority
 ) {}

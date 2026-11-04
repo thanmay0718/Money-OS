@@ -7,12 +7,14 @@ import com.moneyos.entity.FinancialGoal;
 import com.moneyos.entity.GoalContribution;
 import com.moneyos.entity.MoneyPocket;
 import com.moneyos.entity.User;
+import com.moneyos.enums.GoalStatus;
 import com.moneyos.exception.ResourceNotFoundException;
 import com.moneyos.repository.FinancialGoalRepository;
 import com.moneyos.repository.GoalContributionRepository;
 import com.moneyos.repository.MoneyPocketRepository;
 import com.moneyos.repository.TransactionRepository;
 import com.moneyos.repository.UserRepository;
+import com.moneyos.service.FinancialActivityService;
 import com.moneyos.service.GoalContributionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,7 @@ public class GoalContributionServiceImpl implements GoalContributionService {
     private final MoneyPocketRepository moneyPocketRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private final FinancialActivityService financialActivityService;
 
     @Override
     @Transactional
@@ -111,6 +114,11 @@ public class GoalContributionServiceImpl implements GoalContributionService {
         goal.recalculateStatus(LocalDate.now());
         FinancialGoal updatedGoal = financialGoalRepository.save(goal);
 
+        financialActivityService.recordGoalContributionActivity(userId, savedContribution);
+        if (updatedGoal.getStatus() == GoalStatus.COMPLETED || updatedGoal.getStatus() == GoalStatus.OVERACHIEVED) {
+            financialActivityService.recordGoalCompletedActivity(userId, updatedGoal);
+        }
+
         return toResponse(savedContribution, toGoalResponse(updatedGoal));
     }
 
@@ -147,7 +155,6 @@ public class GoalContributionServiceImpl implements GoalContributionService {
                 goal.getTitle(),
                 goal.getTargetAmount(),
                 goal.getSavedAmount(),
-                goal.calculateRemainingAmount(),
                 goal.getCurrency(),
                 goal.getTargetDate(),
                 goal.getStatus(),

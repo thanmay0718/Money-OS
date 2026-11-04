@@ -1,5 +1,6 @@
 package com.moneyos.entity;
 
+import com.moneyos.enums.GoalPriority;
 import com.moneyos.enums.GoalStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -56,6 +57,10 @@ public class FinancialGoal {
     @Column(nullable = false, length = 20)
     private GoalStatus status = GoalStatus.ACTIVE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private GoalPriority priority = GoalPriority.MEDIUM;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -70,6 +75,9 @@ public class FinancialGoal {
         if (savedAmount == null) {
             savedAmount = BigDecimal.ZERO;
         }
+        if (priority == null) {
+            priority = GoalPriority.MEDIUM;
+        }
         if (currency == null || currency.isBlank()) {
             currency = (user != null && user.getCurrency() != null) ? user.getCurrency() : "INR";
         }
@@ -81,6 +89,9 @@ public class FinancialGoal {
         updatedAt = Instant.now();
         if (savedAmount == null) {
             savedAmount = BigDecimal.ZERO;
+        }
+        if (priority == null) {
+            priority = GoalPriority.MEDIUM;
         }
         recalculateStatus(LocalDate.now());
     }
@@ -127,6 +138,18 @@ public class FinancialGoal {
         this.savedAmount = savedAmount != null ? savedAmount : BigDecimal.ZERO;
         this.currency = (currency != null && !currency.isBlank()) ? currency : "INR";
         this.targetDate = targetDate;
+        this.priority = GoalPriority.MEDIUM;
+        recalculateStatus(LocalDate.now());
+    }
+
+    public FinancialGoal(User user, String title, BigDecimal targetAmount, BigDecimal savedAmount, String currency, LocalDate targetDate, GoalPriority priority) {
+        this.user = user;
+        this.title = title;
+        this.targetAmount = targetAmount;
+        this.savedAmount = savedAmount != null ? savedAmount : BigDecimal.ZERO;
+        this.currency = (currency != null && !currency.isBlank()) ? currency : "INR";
+        this.targetDate = targetDate;
+        this.priority = priority != null ? priority : GoalPriority.MEDIUM;
         recalculateStatus(LocalDate.now());
     }
 }

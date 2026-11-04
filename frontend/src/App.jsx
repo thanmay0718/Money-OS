@@ -8,6 +8,7 @@ import IconRail from './components/layout/IconRail'
 import KineticGrid from './components/background/KineticGrid'
 import TopBar from './components/layout/TopBar'
 import Dashboard from './features/dashboard/Dashboard'
+import OverviewPage from './features/overview/OverviewPage'
 import TransactionsPage from './features/transactions/TransactionsPage'
 import PocketsPage from './features/pockets/PocketsPage'
 import CategoriesPage from './features/categories/CategoriesPage'
@@ -17,6 +18,12 @@ import RegisterPage from './features/auth/RegisterPage'
 import OAuthCallbackPage from './features/auth/OAuthCallbackPage'
 import LandingPage from './features/landing/LandingPage'
 import FinancialOnboarding from './features/onboarding/FinancialOnboarding'
+import BackendUnavailablePage from './features/offline/BackendUnavailablePage'
+import NotFoundPage from './features/offline/NotFoundPage'
+import {
+  BACKEND_AVAILABLE_EVENT,
+  BACKEND_UNAVAILABLE_EVENT,
+} from './lib/backendStatus'
 import { Toaster } from 'sileo'
 import 'sileo/styles.css'
 
@@ -93,6 +100,7 @@ export default function App() {
   const dispatch = useDispatch()
   const { pathname } = useLocation()
   const token = useSelector((state) => state.auth.token)
+  const [backendError, setBackendError] = React.useState(null)
   const isLanding = pathname === '/welcome' || (!token && pathname === '/')
   const isAuthPage = ['/login', '/register', '/signup', '/oauth/callback', '/welcome'].includes(pathname) || (!token && pathname === '/')
   const isAdminPage = pathname.startsWith('/admin')
@@ -104,11 +112,33 @@ export default function App() {
     }
   }, [dispatch, token])
 
+  useEffect(() => {
+    const markUnavailable = (event) => {
+      setBackendError({ status: event.detail?.status ?? null })
+    }
+    const markAvailable = () => setBackendError(null)
+
+    window.addEventListener(BACKEND_UNAVAILABLE_EVENT, markUnavailable)
+    window.addEventListener(BACKEND_AVAILABLE_EVENT, markAvailable)
+    return () => {
+      window.removeEventListener(BACKEND_UNAVAILABLE_EVENT, markUnavailable)
+      window.removeEventListener(BACKEND_AVAILABLE_EVENT, markAvailable)
+    }
+  }, [])
+
+  if (backendError) {
+    return <BackendUnavailablePage status={backendError.status} />
+  }
+
   // When inside Admin, AdminLayout provides its own dedicated sidebar and topbar
   if (isAdminPage) {
     return (
       <div className="relative min-h-screen bg-background text-primaryText font-sans antialiased overflow-x-hidden">
-        <Toaster position="top-center" theme="light" />
+        <Toaster
+          position="top-center"
+          theme="light"
+          options={{ duration: 3500, autopilot: { expand: 0, collapse: 3000 } }}
+        />
         <KineticGrid />
         <div className="relative z-10">
           <Routes>
@@ -136,7 +166,11 @@ export default function App() {
 
   return (
     <div className="relative flex min-h-screen bg-background text-primaryText font-sans antialiased overflow-x-hidden">
-      <Toaster position="top-center" theme="light" />
+      <Toaster
+        position="top-center"
+        theme="light"
+        options={{ duration: 3500, autopilot: { expand: 0, collapse: 3000 } }}
+      />
       {/* Liquid Glass Ambient Lighting Blooms */}
       <div className="ambient-glow-background" aria-hidden="true" />
 
@@ -166,6 +200,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <DashboardRoute />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/overview"
+              element={
+                <ProtectedRoute>
+                  <OverviewPage />
                 </ProtectedRoute>
               }
             />
@@ -221,7 +263,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
       </div>

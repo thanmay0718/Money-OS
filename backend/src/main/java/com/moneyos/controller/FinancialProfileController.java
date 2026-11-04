@@ -2,8 +2,10 @@ package com.moneyos.controller;
 
 import com.moneyos.dto.request.FinancialPreferencesRequest;
 import com.moneyos.dto.request.FinancialProfileRequest;
+import com.moneyos.dto.response.DashboardSummaryResponse;
 import com.moneyos.dto.response.FinancialProfileResponse;
 import com.moneyos.entity.User;
+import com.moneyos.service.BudgetService;
 import com.moneyos.service.FinancialProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,19 @@ import org.springframework.web.bind.annotation.*;
 public class FinancialProfileController {
 
     private final FinancialProfileService profileService;
+    private final BudgetService budgetService;
+
+    @GetMapping("/dashboard-summary")
+    public ResponseEntity<DashboardSummaryResponse> getDashboardSummary(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(budgetService.getDashboardSummary(user.getId()));
+    }
+
+    @GetMapping("/emergency-fund")
+    public ResponseEntity<com.moneyos.dto.response.EmergencyFundResponse> getEmergencyFund(
+            @AuthenticationPrincipal User user,
+            @RequestParam(required = false) Integer targetMonths) {
+        return ResponseEntity.ok(budgetService.getEmergencyFund(user.getId(), targetMonths));
+    }
 
     @GetMapping("/financial")
     public ResponseEntity<FinancialProfileResponse> getFinancialProfile(@AuthenticationPrincipal User user) {

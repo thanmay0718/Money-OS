@@ -1,4 +1,3 @@
-
 package com.moneyos.service;
 
 import com.moneyos.dto.request.TransactionRequest;
@@ -18,5 +17,10 @@ public interface TransactionService {
     Page<TransactionResponse> getMyTransactions(
             UUID userId,
             Pageable pageable
+    );
+
+    void deleteTransaction(
+            UUID userId,
+            UUID transactionId
     );
 }

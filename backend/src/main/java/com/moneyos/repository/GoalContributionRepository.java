@@ -27,4 +27,6 @@ public interface GoalContributionRepository extends JpaRepository<GoalContributi
     BigDecimal sumContributionsByGoalIdAndUserId(@Param("goalId") UUID goalId, @Param("userId") UUID userId);
 
     Optional<GoalContribution> findByUser_IdAndIdempotencyKey(UUID userId, String idempotencyKey);
+
+    List<GoalContribution> findAllByUser_IdOrderByContributionDateAsc(UUID userId);
 }

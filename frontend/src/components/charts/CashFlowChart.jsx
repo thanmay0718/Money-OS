@@ -1,58 +1,29 @@
 // src/components/charts/CashFlowChart.jsx
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import {
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts'
+import { TrendingUp, TrendingDown } from '../ui/Icons'
 
-// Lavender Dawn semantic colors
-const INCOME_COLOR   = '#70D6A3'  // income green
-const EXPENSE_COLOR  = '#F07891'  // expense pink
+const INCOME_COLOR  = '#70D6A3' // emerald/green
+const EXPENSE_COLOR = '#F07891' // rose/pink
+const NET_COLOR     = '#E2D9F3' // champagne/lavender
 
-export default function CashFlowChart({ transactions = [], currencyCode = 'INR' }) {
-  if (!transactions || transactions.length === 0) {
-    return (
-      <div className="w-full h-full min-h-[220px] flex flex-col items-center justify-center text-[#737373] text-xs">
-        <div className="w-10 h-10 rounded-2xl glass-subtle flex items-center justify-center text-[#737373] mb-2">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-          </svg>
-        </div>
-        <p className="font-medium text-[#A3A3A3]">No cash flow data yet</p>
-        <p className="text-[11px] mt-0.5 text-[#737373]">
-          Record verified income or expenses to visualize trends.
-        </p>
-      </div>
-    )
-  }
-
-  // Aggregate by date
-  const dailyMap = {}
-  transactions.forEach((tx) => {
-    if (!tx.transactionDate) return
-    const date = tx.transactionDate.slice(0, 10)
-    const amt = Number(tx.amount) || 0
-    if (!dailyMap[date]) {
-      dailyMap[date] = { date, income: 0, expense: 0, net: 0 }
-    }
-    if (tx.type === 'INCOME') {
-      dailyMap[date].income += amt
-      dailyMap[date].net += amt
-    } else if (tx.type === 'EXPENSE') {
-      dailyMap[date].expense += amt
-      dailyMap[date].net -= amt
-    }
-  })
-
-  const data = Object.values(dailyMap).sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  )
+export default function CashFlowChart({
+  transactions = [],
+  currencyCode = 'INR',
+  backendTrends = null,
+}) {
+  const [timeframe, setTimeframe] = useState('30D') // '7D' | '30D' | '6M' | '1Y'
+  const [showNetLine, setShowNetLine] = useState(true)
 
   const formatCurrency = (val) =>
     new Intl.NumberFormat('en-IN', {
@@ -61,15 +32,103 @@ export default function CashFlowChart({ transactions = [], currencyCode = 'INR' 
       maximumFractionDigits: 0,
     }).format(val || 0)
 
-  // Custom tooltip — Lavender Dawn dark surface
+  // Filter & aggregate data based on selected timeframe
+  const chartData = useMemo(() => {
+    const now = new Date()
+    let daysToInclude = 30
+    if (timeframe === '7D') daysToInclude = 7
+    if (timeframe === '30D') daysToInclude = 30
+    if (timeframe === '6M') daysToInclude = 180
+    if (timeframe === '1Y') daysToInclude = 365
+
+    const cutoffDate = new Date(now.getTime() - daysToInclude * 24 * 60 * 60 * 1000)
+
+    // Aggregate by date (or month for 6M/1Y)
+    const isLongRange = timeframe === '6M' || timeframe === '1Y'
+    const bucketMap = {}
+
+    // Initialize buckets with 0 to ensure continuity
+    if (timeframe === '7D' || timeframe === '30D') {
+      for (let i = daysToInclude - 1; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+        const dateKey = d.toISOString().slice(0, 10)
+        bucketMap[dateKey] = {
+          date: dateKey,
+          label: `${d.getMonth() + 1}/${d.getDate()}`,
+          income: 0,
+          expense: 0,
+          net: 0,
+        }
+      }
+    }
+
+    if (Array.isArray(transactions) && transactions.length > 0) {
+      transactions.forEach((tx) => {
+        if (!tx.transactionDate) return
+        const txDate = new Date(tx.transactionDate)
+        if (txDate < cutoffDate) return
+
+        let bucketKey = tx.transactionDate.slice(0, 10)
+        let label = `${txDate.getMonth() + 1}/${txDate.getDate()}`
+
+        if (isLongRange) {
+          bucketKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`
+          label = txDate.toLocaleString('default', { month: 'short' })
+        }
+
+        const amt = Number(tx.amount) || 0
+
+        if (!bucketMap[bucketKey]) {
+          bucketMap[bucketKey] = { date: bucketKey, label, income: 0, expense: 0, net: 0 }
+        }
+
+        if (tx.type === 'INCOME') {
+          bucketMap[bucketKey].income += amt
+          bucketMap[bucketKey].net += amt
+        } else if (tx.type === 'EXPENSE') {
+          bucketMap[bucketKey].expense += amt
+          bucketMap[bucketKey].net -= amt
+        }
+      })
+    } else if (Array.isArray(backendTrends) && backendTrends.length > 0) {
+      backendTrends.forEach((pt) => {
+        const ptDate = new Date(pt.date)
+        if (ptDate < cutoffDate) return
+        const key = pt.date.slice(0, 10)
+        bucketMap[key] = {
+          date: key,
+          label: `${ptDate.getMonth() + 1}/${ptDate.getDate()}`,
+          income: Number(pt.income) || 0,
+          expense: Number(pt.expense) || 0,
+          net: Number(pt.netFlow) || 0,
+        }
+      })
+    }
+
+    return Object.values(bucketMap).sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+  }, [transactions, backendTrends, timeframe])
+
+  // Summary figures for the active timeframe
+  const totalPeriodIncome = useMemo(
+    () => chartData.reduce((acc, pt) => acc + pt.income, 0),
+    [chartData]
+  )
+  const totalPeriodExpense = useMemo(
+    () => chartData.reduce((acc, pt) => acc + pt.expense, 0),
+    [chartData]
+  )
+  const netCashFlow = totalPeriodIncome - totalPeriodExpense
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-      const incomeVal  = payload.find((p) => p.dataKey === 'income')?.value  || 0
+      const incomeVal = payload.find((p) => p.dataKey === 'income')?.value || 0
       const expenseVal = payload.find((p) => p.dataKey === 'expense')?.value || 0
-      const netVal     = incomeVal - expenseVal
+      const netVal = incomeVal - expenseVal
 
       return (
-        <div className="rounded-xl p-3 border border-[#292929] shadow-xl backdrop-blur-xl bg-[#181818]/95 text-xs min-w-[150px]">
+        <div className="rounded-xl p-3 border border-[#292929] shadow-2xl backdrop-blur-xl bg-[#181818]/95 text-xs min-w-[160px]">
           <p className="text-[11px] font-medium text-[#737373] mb-2 border-b border-[#292929] pb-1">
             {new Date(label).toLocaleDateString(undefined, {
               month: 'short',
@@ -92,8 +151,8 @@ export default function CashFlowChart({ transactions = [], currencyCode = 'INR' 
               </span>
               <span className="font-semibold">{formatCurrency(expenseVal)}</span>
             </div>
-            <div className="flex items-center justify-between text-[#FAFAFA] pt-1 border-t border-[#292929] font-medium">
-              <span>Net</span>
+            <div className="flex items-center justify-between text-[#FAFAFA] pt-1.5 border-t border-[#292929] font-medium">
+              <span>Net Cash Flow</span>
               <span style={{ color: netVal >= 0 ? INCOME_COLOR : EXPENSE_COLOR }}>
                 {formatCurrency(netVal)}
               </span>
@@ -107,74 +166,150 @@ export default function CashFlowChart({ transactions = [], currencyCode = 'INR' 
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
+      {/* Header with Title, Period Switchers, and Legends */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-[#FAFAFA] tracking-tight">Cash Flow Trend</h3>
-          <p className="text-[11px] text-[#737373]">Daily income vs. expense progression</p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-[#FAFAFA] tracking-tight">
+              Cash Flow Analytics
+            </h3>
+            <span
+              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                netCashFlow >= 0
+                  ? 'bg-[#70D6A3]/15 text-[#70D6A3] border border-[#70D6A3]/20'
+                  : 'bg-[#F07891]/15 text-[#F07891] border border-[#F07891]/20'
+              }`}
+            >
+              {netCashFlow >= 0 ? (
+                <TrendingUp className="w-2.5 h-2.5 mr-1" />
+              ) : (
+                <TrendingDown className="w-2.5 h-2.5 mr-1" />
+              )}
+              Net {formatCurrency(netCashFlow)}
+            </span>
+          </div>
+          <p className="text-[11px] text-[#737373] mt-0.5">
+            Progressive income vs. expense flow over time
+          </p>
         </div>
-        <div className="flex items-center space-x-3 text-[11px]">
-          <span className="flex items-center text-[#A3A3A3]">
-            <span className="w-2 h-2 rounded-full mr-1.5" style={{ background: INCOME_COLOR, boxShadow: `0 0 8px ${INCOME_COLOR}99` }} />
-            Income
-          </span>
-          <span className="flex items-center text-[#A3A3A3]">
-            <span className="w-2 h-2 rounded-full mr-1.5" style={{ background: EXPENSE_COLOR, boxShadow: `0 0 8px ${EXPENSE_COLOR}99` }} />
-            Expense
-          </span>
+
+        {/* Timeframe selector pills */}
+        <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/[0.06]">
+          {['7D', '30D', '6M', '1Y'].map((tf) => (
+            <button
+              key={tf}
+              type="button"
+              onClick={() => setTimeframe(tf)}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-all ${
+                timeframe === tf
+                  ? 'bg-white/10 text-white shadow-sm font-semibold'
+                  : 'text-[#737373] hover:text-[#FAFAFA]'
+              }`}
+            >
+              {tf}
+            </button>
+          ))}
         </div>
       </div>
-      <div className="flex-1 min-h-[200px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-            <defs>
-              <linearGradient id="incomeGlassGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor={INCOME_COLOR}  stopOpacity={0.45} />
-                <stop offset="95%" stopColor={INCOME_COLOR}  stopOpacity={0.0}  />
-              </linearGradient>
-              <linearGradient id="expenseGlassGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor={EXPENSE_COLOR} stopOpacity={0.45} />
-                <stop offset="95%" stopColor={EXPENSE_COLOR} stopOpacity={0.0}  />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 10, fill: '#737373' }}
-              tickLine={false}
-              axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
-              tickFormatter={(str) => {
-                const d = new Date(str)
-                return `${d.getMonth() + 1}/${d.getDate()}`
-              }}
+
+      {/* Legend & Toggle */}
+      <div className="flex items-center justify-between text-[11px] mb-3 text-[#A3A3A3]">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center">
+            <span
+              className="w-2 h-2 rounded-full mr-1.5"
+              style={{ background: INCOME_COLOR, boxShadow: `0 0 6px ${INCOME_COLOR}88` }}
             />
-            <YAxis
-              tick={{ fontSize: 10, fill: '#737373' }}
-              tickLine={false}
-              axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
-              tickFormatter={(val) => {
-                if (val >= 1000) return `₹${(val / 1000).toFixed(0)}k`
-                return `₹${val}`
-              }}
+            Income ({formatCurrency(totalPeriodIncome)})
+          </span>
+          <span className="flex items-center">
+            <span
+              className="w-2 h-2 rounded-full mr-1.5"
+              style={{ background: EXPENSE_COLOR, boxShadow: `0 0 6px ${EXPENSE_COLOR}88` }}
             />
-            <Tooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey="income"
-              stroke={INCOME_COLOR}
-              strokeWidth={2}
-              fillOpacity={1}
-              fill="url(#incomeGlassGrad)"
-            />
-            <Area
-              type="monotone"
-              dataKey="expense"
-              stroke={EXPENSE_COLOR}
-              strokeWidth={2}
-              fillOpacity={1}
-              fill="url(#expenseGlassGrad)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+            Expense ({formatCurrency(totalPeriodExpense)})
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowNetLine(!showNetLine)}
+          className="text-[10px] text-[#737373] hover:text-white transition-colors"
+        >
+          {showNetLine ? 'Hide Net Line' : 'Show Net Line'}
+        </button>
+      </div>
+
+      {/* Chart container */}
+      <div className="flex-1 min-h-[220px] w-full">
+        {chartData.length === 0 ? (
+          <div className="w-full h-full flex flex-col items-center justify-center text-[#737373] text-xs">
+            <p>No activity recorded in this timeframe.</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="incomeAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={INCOME_COLOR} stopOpacity={0.4} />
+                  <stop offset="95%" stopColor={INCOME_COLOR} stopOpacity={0.0} />
+                </linearGradient>
+                <linearGradient id="expenseAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={EXPENSE_COLOR} stopOpacity={0.4} />
+                  <stop offset="95%" stopColor={EXPENSE_COLOR} stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 10, fill: '#737373' }}
+                tickLine={false}
+                axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+                tickFormatter={(str) => {
+                  const d = new Date(str)
+                  return timeframe === '6M' || timeframe === '1Y'
+                    ? d.toLocaleString('default', { month: 'short' })
+                    : `${d.getMonth() + 1}/${d.getDate()}`
+                }}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: '#737373' }}
+                tickLine={false}
+                axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+                tickFormatter={(val) => {
+                  if (Math.abs(val) >= 1000) return `₹${(val / 1000).toFixed(0)}k`
+                  return `₹${val}`
+                }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="income"
+                stroke={INCOME_COLOR}
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#incomeAreaGrad)"
+              />
+              <Area
+                type="monotone"
+                dataKey="expense"
+                stroke={EXPENSE_COLOR}
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#expenseAreaGrad)"
+              />
+              {showNetLine && (
+                <Line
+                  type="monotone"
+                  dataKey="net"
+                  stroke={NET_COLOR}
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  dot={false}
+                />
+              )}
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   )
@@ -183,4 +318,5 @@ export default function CashFlowChart({ transactions = [], currencyCode = 'INR' 
 CashFlowChart.propTypes = {
   transactions: PropTypes.array,
   currencyCode: PropTypes.string,
+  backendTrends: PropTypes.array,
 }

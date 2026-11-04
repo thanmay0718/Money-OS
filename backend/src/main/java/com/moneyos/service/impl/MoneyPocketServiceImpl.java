@@ -9,6 +9,7 @@ import com.moneyos.repository.GoalContributionRepository;
 import com.moneyos.repository.MoneyPocketRepository;
 import com.moneyos.repository.TransactionRepository;
 import com.moneyos.repository.UserRepository;
+import com.moneyos.service.FinancialActivityService;
 import com.moneyos.service.MoneyPocketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class MoneyPocketServiceImpl implements MoneyPocketService {
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
     private final GoalContributionRepository goalContributionRepository;
+    private final FinancialActivityService financialActivityService;
 
     @Override
     @Transactional
@@ -47,6 +49,7 @@ public class MoneyPocketServiceImpl implements MoneyPocketService {
 
         MoneyPocket pocket = new MoneyPocket(user, name);
         MoneyPocket saved = moneyPocketRepository.save(pocket);
+        financialActivityService.recordPocketCreatedActivity(userId, saved);
 
         return toResponse(saved, BigDecimal.ZERO);
     }

@@ -123,8 +123,17 @@ export const AlertTriangle       = createAppleIcon(LucideIcons.AlertTriangle, 20
 export const ClipboardCheck      = createAppleIcon(LucideIcons.ClipboardCheck, 20)
 export const CircleDot           = createAppleIcon(LucideIcons.CircleDot, 20)
 export const Landmark            = createAppleIcon(LucideIcons.Landmark, 20)
+export const Utensils            = createAppleIcon(LucideIcons.Utensils, 20)
+export const Film                = createAppleIcon(LucideIcons.Film, 20)
+export const Zap                 = createAppleIcon(LucideIcons.Zap, 20)
+export const Filter              = createAppleIcon(LucideIcons.Filter, 18)
+export const Clock               = createAppleIcon(LucideIcons.Clock, 18)
+export const PieChart            = createAppleIcon(LucideIcons.PieChart, 18)
+export const ArrowUpDown         = createAppleIcon(LucideIcons.ArrowUpDown, 18)
+export const ExternalLink        = createAppleIcon(LucideIcons.ExternalLink, 18)
 
 // ── Compatibility Aliases for Existing App Code ─────────────────────────
+export const CheckCircle         = CircleCheck
 export const CheckCircle2        = CircleCheck
 export const AlertCircle         = TriangleAlert
 export const SearchIcon          = Search

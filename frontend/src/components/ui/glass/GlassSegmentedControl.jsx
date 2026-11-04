@@ -30,7 +30,7 @@ export default function GlassSegmentedControl({
     <div
       role="radiogroup"
       aria-label={name || 'Segmented control'}
-      className={`relative inline-flex items-center glass-subtle backdrop-blur-md border border-[rgba(241,223,177,0.12)] bg-[#141517]/80 shadow-inner overflow-hidden select-none ${sizeClasses} ${className}`}
+      className={`relative inline-flex items-center glass-subtle backdrop-blur-md border border-[#C3ABFA]/15 bg-[#141414]/80 shadow-inner overflow-hidden select-none ${sizeClasses} ${className}`}
     >
       {options.map((opt) => {
         const isSelected = opt.value === value
@@ -44,15 +44,15 @@ export default function GlassSegmentedControl({
             disabled={opt.disabled}
             className={`relative z-10 flex items-center justify-center font-medium transition-all duration-200 rounded-lg whitespace-nowrap cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${itemPadding} ${
               isSelected
-                ? 'text-[#171512] font-semibold bg-gradient-to-b from-[#F1DFB1] to-[#D6B875] shadow-[0_2px_10px_rgba(214,184,117,0.35),inset_0_1px_1px_rgba(255,255,255,0.6)] border border-[#F1DFB1]/40'
-                : 'text-[#A5A5A0] hover:text-[#F5F3ED] hover:bg-white/[0.04]'
+                ? 'text-[#18151F] font-semibold bg-gradient-to-b from-[#D5C5FF] to-[#B99BF5] shadow-[0_2px_10px_rgba(195,171,250,0.3),inset_0_1px_1px_rgba(255,255,255,0.45)] border border-[#D5C5FF]/40'
+                : 'text-[#A3A3A3] hover:text-[#FAFAFA] hover:bg-white/[0.04]'
             }`}
           >
             {opt.icon && <span className="mr-1.5 inline-flex">{opt.icon}</span>}
             {opt.label}
             {opt.badge != null && (
               <span className={`ml-1.5 text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                isSelected ? 'bg-[#171512]/20 text-[#171512]' : 'bg-[#292B2E] text-[#A5A5A0]'
+                isSelected ? 'bg-[#18151F]/15 text-[#18151F]' : 'bg-[#292929] text-[#A3A3A3]'
               }`}>
                 {opt.badge}
               </span>

@@ -16,8 +16,8 @@ export default function GlassToast({
     success: 'bg-[#1B1D20]/95 border-[#72D6A3]/40 text-[#72D6A3] shadow-[0_4px_20px_rgba(114,214,163,0.2)]',
     error: 'bg-[#1B1D20]/95 border-[#F08080]/40 text-[#F08080] shadow-[0_4px_20px_rgba(240,128,128,0.2)]',
     warning: 'bg-[#1B1D20]/95 border-[#E9BC68]/40 text-[#E9BC68] shadow-[0_4px_20px_rgba(233,188,104,0.2)]',
-    info: 'bg-[#1B1D20]/95 border-[#D6B875]/40 text-[#F1DFB1] shadow-[0_4px_20px_rgba(214,184,117,0.2)]',
-  }[type] || 'bg-[#1B1D20]/95 border-[rgba(241,223,177,0.12)] text-[#F5F3ED]'
+    info: 'bg-[#181818]/95 border-[#C3ABFA]/35 text-[#D5C5FF] shadow-[0_4px_20px_rgba(195,171,250,0.18)]',
+  }[type] || 'bg-[#181818]/95 border-white/10 text-[#FAFAFA]'
 
   const icons = {
     success: (
@@ -36,7 +36,7 @@ export default function GlassToast({
       </svg>
     ),
     info: (
-      <svg className="w-4 h-4 text-[#D6B875] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="w-4 h-4 text-[#C3ABFA] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),

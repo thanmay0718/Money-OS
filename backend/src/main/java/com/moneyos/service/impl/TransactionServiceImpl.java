@@ -14,6 +14,7 @@ import com.moneyos.repository.CategoryRepository;
 import com.moneyos.repository.MoneyPocketRepository;
 import com.moneyos.repository.TransactionRepository;
 import com.moneyos.repository.UserRepository;
+import com.moneyos.service.FinancialActivityService;
 import com.moneyos.service.GoalContributionService;
 import com.moneyos.service.TransactionService;
 
@@ -38,6 +39,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final MoneyPocketRepository moneyPocketRepository;
     private final CategoryRepository categoryRepository;
     private final GoalContributionService goalContributionService;
+    private final FinancialActivityService financialActivityService;
 
     @Override
     @Transactional
@@ -167,6 +169,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 5. Save the transaction
         Transaction saved = transactionRepository.save(transaction);
+        financialActivityService.recordTransactionActivity(userId, saved);
 
         // 6. If goal contribution requested for this income, process it atomically
         GoalContributionResponse contributionResponse = null;
@@ -213,6 +216,23 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository
                 .findAllByUser_Id(user.getId(), pageable)
                 .map(this::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTransaction(UUID userId, UUID transactionId) {
+        User user = userRepository.findById(userId)
+                .filter(existingUser -> existingUser.getDeletedAt() == null)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .filter(t -> t.getUser().getId().equals(user.getId()))
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Transaction not found"));
+
+        financialActivityService.recordTransactionDeletedActivity(userId, transaction);
+        transactionRepository.delete(transaction);
     }
 
     private MoneyPocket findPocket(UUID pocketId, UUID userId) {

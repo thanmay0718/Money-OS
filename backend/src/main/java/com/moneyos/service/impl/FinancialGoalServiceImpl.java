@@ -4,8 +4,10 @@ import com.moneyos.dto.request.FinancialGoalRequest;
 import com.moneyos.dto.response.FinancialGoalResponse;
 import com.moneyos.entity.FinancialGoal;
 import com.moneyos.entity.User;
+import com.moneyos.enums.GoalPriority;
 import com.moneyos.exception.ResourceNotFoundException;
 import com.moneyos.repository.FinancialGoalRepository;
+import com.moneyos.service.FinancialActivityService;
 import com.moneyos.service.FinancialGoalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +27,7 @@ import java.util.UUID;
 public class FinancialGoalServiceImpl implements FinancialGoalService {
 
     private final FinancialGoalRepository goalRepository;
+    private final FinancialActivityService financialActivityService;
 
     @Override
     @Transactional(readOnly = true)
@@ -52,16 +57,20 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
                 ? request.currency()
                 : (user.getCurrency() != null ? user.getCurrency() : "INR");
 
+        GoalPriority priority = request.priority() != null ? request.priority() : GoalPriority.MEDIUM;
+
         FinancialGoal goal = new FinancialGoal(
                 user,
                 request.title().trim(),
                 request.targetAmount(),
                 request.savedAmount() != null ? request.savedAmount() : BigDecimal.ZERO,
                 currency,
-                request.targetDate()
+                request.targetDate(),
+                priority
         );
 
         FinancialGoal saved = goalRepository.save(goal);
+        financialActivityService.recordGoalCreatedActivity(user.getId(), saved);
         return toResponse(saved);
     }
 
@@ -96,6 +105,9 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
         if (request.targetDate() != null) {
             goal.setTargetDate(request.targetDate());
         }
+        if (request.priority() != null) {
+            goal.setPriority(request.priority());
+        }
 
         goal.recalculateStatus(LocalDate.now());
         FinancialGoal saved = goalRepository.save(goal);
@@ -111,16 +123,53 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
     }
 
     private FinancialGoalResponse toResponse(FinancialGoal goal) {
+        BigDecimal remaining = goal.calculateRemainingAmount();
+        BigDecimal progressPct = goal.calculateProgressPercentage();
+        LocalDate today = LocalDate.now();
+
+        BigDecimal recommendedMonthly = null;
+        LocalDate predictedDate = null;
+
+        if (remaining.compareTo(BigDecimal.ZERO) > 0 && goal.getTargetDate() != null) {
+            if (goal.getTargetDate().isAfter(today)) {
+                Period period = Period.between(today, goal.getTargetDate());
+                int monthsRemaining = Math.max(1, period.getYears() * 12 + period.getMonths());
+                recommendedMonthly = remaining.divide(BigDecimal.valueOf(monthsRemaining), 2, RoundingMode.HALF_UP);
+                predictedDate = goal.getTargetDate();
+            } else {
+                recommendedMonthly = remaining;
+                predictedDate = today.plusMonths(1);
+            }
+        }
+
+        String milestoneMessage;
+        double pct = progressPct.doubleValue();
+        if (pct >= 100.0) {
+            milestoneMessage = "Goal fully achieved!";
+        } else if (pct >= 75.0) {
+            milestoneMessage = "Almost there! Over 75% funded.";
+        } else if (pct >= 50.0) {
+            milestoneMessage = "Halfway mark passed! You are on track.";
+        } else if (pct >= 25.0) {
+            milestoneMessage = "Strong momentum! Over 25% funded.";
+        } else {
+            milestoneMessage = "Goal active. Regular contributions build wealth.";
+        }
+
         return new FinancialGoalResponse(
                 goal.getId(),
                 goal.getTitle(),
                 goal.getTargetAmount(),
                 goal.getSavedAmount(),
-                goal.calculateRemainingAmount(),
+                remaining,
                 goal.getCurrency(),
                 goal.getTargetDate(),
                 goal.getStatus(),
-                goal.calculateProgressPercentage(),
+                goal.getPriority() != null ? goal.getPriority() : GoalPriority.MEDIUM,
+                progressPct,
+                predictedDate,
+                recommendedMonthly,
+                milestoneMessage,
                 goal.getCreatedAt(),
                 goal.getUpdatedAt()
         );

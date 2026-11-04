@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
 import api from '../../api/axios'
@@ -8,9 +8,15 @@ export default function OAuthCallbackPage() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
+  const hasProcessedCallback = useRef(false)
   const [statusMessage, setStatusMessage] = useState('Completing secure sign-in…')
 
   useEffect(() => {
+    if (hasProcessedCallback.current) {
+      return
+    }
+    hasProcessedCallback.current = true
+
     const searchParams = new URLSearchParams(location.search)
     const hashParams = new URLSearchParams(
       location.hash.startsWith('#') ? location.hash.slice(1) : location.hash

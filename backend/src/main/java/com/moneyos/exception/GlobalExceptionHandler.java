@@ -17,6 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -32,6 +33,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(
             ResourceNotFoundException ex,
+            HttpServletRequest request) {
+
+        return build(
+                HttpStatus.NOT_FOUND,
+                "RESOURCE_NOT_FOUND",
+                ex.getMessage(),
+                request,
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNoResourceFound(
+            NoResourceFoundException ex,
             HttpServletRequest request) {
 
         return build(

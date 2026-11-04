@@ -31,4 +31,14 @@ public interface MoneyPocketRepository
             @Param("pocketId") UUID pocketId,
             @Param("userId") UUID userId
     );
+
+    // Alias used by RecurringTransactionServiceImpl (looks up any active pocket by id + userId)
+    @Query("SELECT p FROM MoneyPocket p WHERE p.id = :pocketId AND p.user.id = :userId AND p.active = true")
+    Optional<MoneyPocket> findByIdAndUserId(
+            @Param("pocketId") UUID pocketId,
+            @Param("userId") UUID userId
+    );
+
+    @Query("SELECT p FROM MoneyPocket p WHERE p.user.id = :userId ORDER BY p.createdAt ASC")
+    List<MoneyPocket> findAllByUser_IdOrderByCreatedAtAsc(@Param("userId") UUID userId);
 }

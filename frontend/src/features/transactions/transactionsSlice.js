@@ -1,6 +1,7 @@
 // src/features/transactions/transactionsSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import api from '../../api/axios'
+import { fetchBudgets } from '../budget/budgetSlice'
 
 const extractItems = (data) => (data && data.content ? data.content : Array.isArray(data) ? data : [])
 
@@ -36,9 +37,17 @@ export const fetchAllTransactions = createAsyncThunk(
 
 export const createTransaction = createAsyncThunk(
   'transactions/create',
-  async (payload, { rejectWithValue }) => {
+  async (payload, { dispatch, getState, rejectWithValue }) => {
     try {
       const response = await api.post('/api/transactions', payload)
+      const transactionMonth = response.data.transactionDate?.slice(0, 7) || payload.transactionDate?.slice(0, 7)
+      const currentMonth = new Date().toISOString().slice(0, 7)
+      const loadedBudgetMonth = getState().budget.list[0]?.month
+
+      if (transactionMonth === currentMonth || transactionMonth === loadedBudgetMonth) {
+        dispatch(fetchBudgets(transactionMonth))
+      }
+
       return response.data
     } catch (err) {
       const message =
@@ -46,6 +55,32 @@ export const createTransaction = createAsyncThunk(
         err.response?.data?.error ||
         err.message ||
         'Failed to create transaction'
+      return rejectWithValue(message)
+    }
+  }
+)
+
+export const deleteTransaction = createAsyncThunk(
+  'transactions/delete',
+  async (id, { dispatch, getState, rejectWithValue }) => {
+    try {
+      const transaction = getState().transactions.list.find((item) => item.id === id)
+      await api.delete(`/api/transactions/${id}`)
+      const transactionMonth = transaction?.transactionDate?.slice(0, 7)
+      const currentMonth = new Date().toISOString().slice(0, 7)
+      const loadedBudgetMonth = getState().budget.list[0]?.month
+
+      if (transactionMonth && (transactionMonth === currentMonth || transactionMonth === loadedBudgetMonth)) {
+        dispatch(fetchBudgets(transactionMonth))
+      }
+
+      return id
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Failed to delete transaction'
       return rejectWithValue(message)
     }
   }
@@ -101,6 +136,11 @@ const transactionsSlice = createSlice({
       // Create
       .addCase(createTransaction.fulfilled, (state, action) => {
         state.list.unshift(action.payload)
+      })
+
+      // Delete
+      .addCase(deleteTransaction.fulfilled, (state, action) => {
+        state.list = state.list.filter((tx) => tx.id !== action.payload)
       })
   },
 })
