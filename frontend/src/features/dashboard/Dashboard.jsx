@@ -49,6 +49,10 @@ import { createGoal as createFinancialGoal } from '../../api/goals'
 import GoalContributionModal from '../goals/GoalContributionModal'
 import GoalHistoryModal from '../goals/GoalHistoryModal'
 import PolaroidLineCarousel from '../../components/ui/polaroid-line-carousel'
+import CoinBalanceBadge from '../overview/components/CoinBalanceBadge'
+import { fetchGamificationOverview } from '../overview/overviewSlice'
+import AiInsightsHub from '../ai/components/AiInsightsHub'
+import ReceiptScannerModal from '../transactions/components/ReceiptScannerModal'
 
 // Semantic financial colors
 const CLR_INCOME   = '#70D6A3' // emerald/green
@@ -70,11 +74,13 @@ export default function Dashboard() {
     error: insightsError,
   } = useSelector((state) => state.dashboard)
   const user = useSelector((state) => state.auth.user)
+  const { gamification, gamificationStatus } = useSelector((state) => state.overview)
 
   // Top overview UI state
   const [showBalance, setShowBalance] = useState(true)
   const [showSavingsRateTooltip, setShowSavingsRateTooltip] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
+  const [showReceiptScanner, setShowReceiptScanner] = useState(false)
 
   // Savings goals state
   const [showGoalForm, setShowGoalForm] = useState(false)
@@ -158,6 +164,7 @@ export default function Dashboard() {
     dispatch(fetchDashboardInsights())
     dispatch(fetchDashboardSummary())
     dispatch(fetchEmergencyFund(6))
+    dispatch(fetchGamificationOverview())
   }, [dispatch])
 
   // Fallback calculations in case backend summary is pending
@@ -269,6 +276,13 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <GlassButton
+            variant="ghost"
+            onClick={() => setShowReceiptScanner(true)}
+            icon={<Sparkles className="w-4 h-4 text-[#C3ABFA]" />}
+          >
+            Scan Receipt
+          </GlassButton>
           <GlassButton
             variant="primary"
             onClick={() => navigate('/transactions')}
@@ -504,6 +518,11 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── PHASE 4: AI FINANCIAL INTELLIGENCE & FORECASTING ───────────────── */}
+      <section>
+        <AiInsightsHub currencyCode={currencyCode} />
+      </section>
+
       {/* ── PHASE 1: CASH FLOW ANALYTICS & EXPENSE BREAKDOWN ─────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7 p-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] flex flex-col justify-between min-h-[340px]">
@@ -609,6 +628,19 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap lg:justify-end">
+            <div className="flex items-center gap-2">
+              <CoinBalanceBadge
+                totalCoins={gamification?.totalCoins ?? 0}
+                loading={gamificationStatus === 'loading' && !gamification}
+              />
+              <button
+                type="button"
+                onClick={() => navigate('/overview')}
+                className="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-medium text-[#D5C5FF] transition-colors hover:border-[#C3ABFA]/40 hover:bg-[#C3ABFA]/[0.06]"
+              >
+                View badges
+              </button>
+            </div>
             {goalProgress && goalProgress.length > 0 && (
               <div className="flex items-center p-0.5 rounded-xl bg-[#141414] border border-[#292929]">
                 <button
@@ -851,6 +883,13 @@ export default function Dashboard() {
                                 {goalProgress[activeGoalIndex].priority} Priority
                               </span>
                             )}
+                            {['COMPLETED', 'OVERACHIEVED'].includes(
+                              goalProgress[activeGoalIndex].status
+                            ) && (
+                              <span className="rounded border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-300">
+                                Goal achieved
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-[#737373]">
                             Saved {formatCurrency(goalProgress[activeGoalIndex].savedAmount)} of{' '}
@@ -922,6 +961,11 @@ export default function Dashboard() {
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <h3 className="font-semibold text-sm text-[#FAFAFA]">{goal.title}</h3>
+                            {['COMPLETED', 'OVERACHIEVED'].includes(goal.status) && (
+                              <span className="mt-1 inline-flex rounded border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-300">
+                                Goal achieved
+                              </span>
+                            )}
                             {goal.priority && (
                               <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-white/[0.05] text-[#A3A3A3]">
                                 {goal.priority}
@@ -1031,9 +1075,48 @@ export default function Dashboard() {
             dispatch(fetchPockets())
             dispatch(fetchAllTransactions())
             dispatch(fetchEmergencyFund(6))
+            const previouslyUnlocked = new Set(
+              (gamification?.achievements || [])
+                .filter((achievement) => achievement.unlocked)
+                .map((achievement) => achievement.code)
+            )
+            dispatch(fetchGamificationOverview())
+              .unwrap()
+              .then((overview) => {
+                const newlyUnlocked = overview.achievements.filter(
+                  (achievement) =>
+                    achievement.unlocked && !previouslyUnlocked.has(achievement.code)
+                )
+                newlyUnlocked.forEach((achievement) => {
+                  toast.success(
+                    `${achievement.title} unlocked!`,
+                    `You earned ${achievement.coinReward} coins.`
+                  )
+                })
+              })
+              .catch(() => {
+                toast.warning(
+                  'Contribution saved',
+                  'Your rewards were saved, but we couldn’t refresh the balance. Check your Overview shortly.'
+                )
+              })
           }}
         />
       )}
+
+      {/* Phase 4 Receipt Scanner Modal */}
+      <ReceiptScannerModal
+        isOpen={showReceiptScanner}
+        onClose={() => setShowReceiptScanner(false)}
+        onSuccess={() => {
+          dispatch(fetchDashboardInsights())
+          dispatch(fetchDashboardSummary())
+          dispatch(fetchPockets())
+          dispatch(fetchAllTransactions())
+          dispatch(fetchEmergencyFund(6))
+          dispatch(fetchGamificationOverview())
+        }}
+      />
 
       {viewingHistoryGoal && (
         <GoalHistoryModal

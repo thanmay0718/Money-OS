@@ -126,7 +126,7 @@ export default function App() {
     }
   }, [])
 
-  if (backendError) {
+  if (backendError && !isAuthPage) {
     return <BackendUnavailablePage status={backendError.status} />
   }
 

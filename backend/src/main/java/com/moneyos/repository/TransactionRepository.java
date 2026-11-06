@@ -22,6 +22,8 @@ public interface TransactionRepository
 
     List<Transaction> findByUserId(UUID userId);
 
+    long countByUserId(UUID userId);
+
     @Query("""
             SELECT COALESCE(SUM(t.amount), 0)
             FROM Transaction t

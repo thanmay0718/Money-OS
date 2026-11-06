@@ -17,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -88,6 +89,27 @@ class AuthControllerTest {
                         .value("Bearer"))
                 .andExpect(jsonPath("$.user.email")
                         .value("test@moneyos.dev"));
+
+        verify(authService).login(any(LoginRequest.class));
+    }
+
+    @Test
+    void login_shouldReturn401_whenCredentialsAreInvalid() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@moneyos.dev");
+        request.setPassword("WrongPassword");
+
+        when(authService.login(any(LoginRequest.class)))
+                .thenThrow(new BadCredentialsException("Invalid email or password"));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"))
+                .andExpect(jsonPath("$.message")
+                        .value("The email or password you entered is incorrect. Please try again."));
 
         verify(authService).login(any(LoginRequest.class));
     }

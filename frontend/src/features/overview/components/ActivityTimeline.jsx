@@ -15,6 +15,7 @@ import {
   LoaderCircle,
 } from '../../../components/ui/Icons'
 import { formatINR } from '../../../lib/format'
+import Pagination from '../../../components/ui/Pagination'
 
 const getActivityVisuals = (activityType) => {
   switch (activityType) {
@@ -120,6 +121,11 @@ export default function ActivityTimeline({
   hasMore,
   onLoadMore,
   onItemClick,
+  currentPage = 1,
+  totalPages = 1,
+  totalItems = 0,
+  pageSize = 10,
+  onPageChange,
 }) {
   if (isLoading && activities.length === 0) {
     return (
@@ -216,8 +222,20 @@ export default function ActivityTimeline({
         )
       })}
 
-      {/* Pagination Load More Button */}
-      {hasMore && (
+      {/* Pagination Controls */}
+      {totalPages > 1 && onPageChange && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={onPageChange}
+          className="mt-2"
+        />
+      )}
+
+      {/* Legacy Load More fallback if no page change provided */}
+      {hasMore && !onPageChange && (
         <div className="pt-3 text-center">
           <button
             type="button"
@@ -247,4 +265,9 @@ ActivityTimeline.propTypes = {
   hasMore: PropTypes.bool,
   onLoadMore: PropTypes.func,
   onItemClick: PropTypes.func,
+  currentPage: PropTypes.number,
+  totalPages: PropTypes.number,
+  totalItems: PropTypes.number,
+  pageSize: PropTypes.number,
+  onPageChange: PropTypes.func,
 }

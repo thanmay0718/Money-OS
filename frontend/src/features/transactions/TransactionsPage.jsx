@@ -3,17 +3,21 @@ import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchAllTransactions } from './transactionsSlice'
 import TransactionForm from './TransactionForm'
+import ReceiptScannerModal from './components/ReceiptScannerModal'
 import {
   GlassSurface,
   GlassBadge,
   GlassSegmentedControl,
+  GlassButton,
 } from '../../components/ui/glass'
 import {
   TrendingUp,
   TrendingDown,
   ArrowLeftRight,
   ReceiptIcon,
+  Sparkles,
 } from '../../components/ui/Icons'
+import Pagination from '../../components/ui/Pagination'
 
 export default function TransactionsPage() {
   const dispatch = useDispatch()
@@ -22,6 +26,14 @@ export default function TransactionsPage() {
   const currencyCode = user?.currency || 'INR'
 
   const [filterType, setFilterType] = useState('ALL')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [showScanner, setShowScanner] = useState(false)
+  const PAGE_SIZE = 10
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterType])
 
   useEffect(() => {
     dispatch(fetchAllTransactions())
@@ -40,6 +52,12 @@ export default function TransactionsPage() {
     return tx.type === filterType
   })
 
+  const totalPages = Math.ceil(filteredTransactions.length / PAGE_SIZE) || 1
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  )
+
   const filterOptions = [
     { value: 'ALL', label: 'All Transactions' },
     { value: 'INCOME', label: 'Income' },
@@ -49,13 +67,22 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#FAFAFA]">
-          Transactions
-        </h1>
-        <p className="text-xs sm:text-sm text-[#A3A3A3] mt-1">
-          Detailed ledger of verified income, day-to-day expenditures, and money pocket reallocations
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#FAFAFA]">
+            Transactions
+          </h1>
+          <p className="text-xs sm:text-sm text-[#A3A3A3] mt-1">
+            Detailed ledger of verified income, day-to-day expenditures, and money pocket reallocations
+          </p>
+        </div>
+        <GlassButton
+          variant="ghost"
+          onClick={() => setShowScanner(true)}
+          icon={<Sparkles className="w-4 h-4 text-[#C3ABFA]" />}
+        >
+          Scan Receipt
+        </GlassButton>
       </div>
 
       <TransactionForm />
@@ -86,92 +113,106 @@ export default function TransactionsPage() {
           )}
 
           {status !== 'loading' && filteredTransactions.length > 0 ? (
-            <ul className="divide-y divide-[#292929] max-h-[600px] overflow-y-auto custom-scrollbar">
-              {filteredTransactions.map((tx) => {
-                const isIncome = tx.type === 'INCOME'
-                const isExpense = tx.type === 'EXPENSE'
-                const isTransfer = tx.type === 'TRANSFER'
+            <div>
+              <ul className="divide-y divide-[#292929]">
+                {paginatedTransactions.map((tx) => {
+                  const isIncome = tx.type === 'INCOME'
+                  const isExpense = tx.type === 'EXPENSE'
+                  const isTransfer = tx.type === 'TRANSFER'
 
-                return (
-                  <li
-                    key={tx.id}
-                    className="flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition-colors"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div
-                        className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm border shadow-sm ${
-                          isIncome
-                            ? 'bg-[#70D6A3]/15 border-[#70D6A3]/30 text-[#70D6A3]'
-                            : isExpense
-                            ? 'bg-[#F07891]/15 border-[#F07891]/30 text-[#F07891]'
-                            : 'bg-[#86B8F5]/15 border-[#86B8F5]/30 text-[#86B8F5]'
-                        }`}
-                      >
-                        {isIncome ? (
-                          <TrendingUp className="w-5 h-5" />
-                        ) : isExpense ? (
-                          <TrendingDown className="w-5 h-5" />
-                        ) : (
-                          <ArrowLeftRight className="w-5 h-5" />
-                        )}
-                      </div>
-
-                      <div className="flex flex-col space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm text-[#FAFAFA]">
-                            {tx.description || 'Untitled Transaction'}
-                          </span>
-                          {tx.categoryName && (
-                            <GlassBadge variant="default" size="sm">
-                              {tx.categoryName}
-                            </GlassBadge>
+                  return (
+                    <li
+                      key={tx.id}
+                      className="flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition-colors"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div
+                          className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm border shadow-sm ${
+                            isIncome
+                              ? 'bg-[#70D6A3]/15 border-[#70D6A3]/30 text-[#70D6A3]'
+                              : isExpense
+                              ? 'bg-[#F07891]/15 border-[#F07891]/30 text-[#F07891]'
+                              : 'bg-[#86B8F5]/15 border-[#86B8F5]/30 text-[#86B8F5]'
+                          }`}
+                        >
+                          {isIncome ? (
+                            <TrendingUp className="w-5 h-5" />
+                          ) : isExpense ? (
+                            <TrendingDown className="w-5 h-5" />
+                          ) : (
+                            <ArrowLeftRight className="w-5 h-5" />
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs text-[#737373]">
-                          <span>
-                            {new Date(tx.transactionDate).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </span>
-                          {isTransfer && tx.fromPocketName && tx.toPocketName && (
-                            <span>
-                              • {tx.fromPocketName} &rarr; {tx.toPocketName}
+                        <div className="flex flex-col space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm text-[#FAFAFA]">
+                              {tx.description || 'Untitled Transaction'}
                             </span>
-                          )}
-                          {!isTransfer && tx.toPocketName && (
-                            <span>• Deposited into {tx.toPocketName}</span>
-                          )}
-                          {!isTransfer && tx.fromPocketName && (
-                            <span>• Paid from {tx.fromPocketName}</span>
-                          )}
+                            {tx.categoryName && (
+                              <GlassBadge variant="default" size="sm">
+                                {tx.categoryName}
+                              </GlassBadge>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xs text-[#737373]">
+                            <span>
+                              {new Date(tx.transactionDate).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </span>
+                            {isTransfer && tx.fromPocketName && tx.toPocketName && (
+                              <span>
+                                • {tx.fromPocketName} &rarr; {tx.toPocketName}
+                              </span>
+                            )}
+                            {!isTransfer && tx.toPocketName && (
+                              <span>• Deposited into {tx.toPocketName}</span>
+                            )}
+                            {!isTransfer && tx.fromPocketName && (
+                              <span>• Paid from {tx.fromPocketName}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="text-right">
-                      <span
-                        className={`font-semibold text-base font-mono ${
-                          isIncome
-                            ? 'text-[#70D6A3]'
-                            : isExpense
-                            ? 'text-[#F07891]'
-                            : 'text-[#86B8F5]'
-                        }`}
-                      >
-                        {isIncome ? '+' : isExpense ? '-' : ''}
-                        {formatCurrency(tx.amount)}
-                      </span>
-                      <p className="text-[10px] text-[#737373] font-semibold tracking-wider uppercase mt-0.5">
-                        {tx.type}
-                      </p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
+                      <div className="text-right">
+                        <span
+                          className={`font-semibold text-base font-mono ${
+                            isIncome
+                              ? 'text-[#70D6A3]'
+                              : isExpense
+                              ? 'text-[#F07891]'
+                              : 'text-[#86B8F5]'
+                          }`}
+                        >
+                          {isIncome ? '+' : isExpense ? '-' : ''}
+                          {formatCurrency(tx.amount)}
+                        </span>
+                        <p className="text-[10px] text-[#737373] font-semibold tracking-wider uppercase mt-0.5">
+                          {tx.type}
+                        </p>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {totalPages > 1 && (
+                <div className="p-4 border-t border-[#292929]">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredTransactions.length}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </div>
           ) : status !== 'loading' ? (
             <div className="p-12 text-center text-[#A3A3A3]">
               <div className="w-12 h-12 rounded-2xl bg-[#222222] border border-[#292929] flex items-center justify-center mx-auto mb-3 text-[#C3ABFA]">
@@ -189,6 +230,15 @@ export default function TransactionsPage() {
           ) : null}
         </GlassSurface>
       </section>
+
+      {/* Phase 4 Receipt Scanner Modal */}
+      <ReceiptScannerModal
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onSuccess={() => {
+          dispatch(fetchAllTransactions())
+        }}
+      />
     </div>
   )
 }

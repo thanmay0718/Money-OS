@@ -17,6 +17,8 @@ public interface BudgetRepository extends JpaRepository<Budget, UUID> {
 
     List<Budget> findAllByUserIdOrderByMonthDescCreatedAtDesc(UUID userId);
 
+    long countByUserId(UUID userId);
+
     Optional<Budget> findByIdAndUserId(UUID id, UUID userId);
 
     @Query("SELECT b FROM Budget b WHERE b.user.id = :userId AND b.month = :month AND b.category.id = :categoryId")

@@ -13,6 +13,8 @@ import com.moneyos.repository.GoalContributionRepository;
 import com.moneyos.repository.MoneyPocketRepository;
 import com.moneyos.repository.TransactionRepository;
 import com.moneyos.repository.UserRepository;
+import com.moneyos.service.AchievementService;
+import com.moneyos.service.FinancialActivityService;
 import com.moneyos.service.impl.GoalContributionServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +55,12 @@ class GoalContributionServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private FinancialActivityService financialActivityService;
+
+    @Mock
+    private AchievementService achievementService;
 
     @InjectMocks
     private GoalContributionServiceImpl contributionService;
@@ -161,6 +169,7 @@ class GoalContributionServiceImplTest {
         assertThat(response.updatedGoal().remainingAmount()).isEqualByComparingTo("0.00");
         assertThat(response.updatedGoal().progressPercentage()).isEqualByComparingTo("100.00");
         assertThat(response.updatedGoal().status()).isEqualTo(GoalStatus.COMPLETED);
+        verify(achievementService).evaluateAchievements(userId);
     }
 
     @Test
@@ -192,6 +201,7 @@ class GoalContributionServiceImplTest {
         assertThat(response.updatedGoal().remainingAmount()).isEqualByComparingTo("0.00");
         assertThat(response.updatedGoal().progressPercentage()).isEqualByComparingTo("110.00");
         assertThat(response.updatedGoal().status()).isEqualTo(GoalStatus.OVERACHIEVED);
+        verify(achievementService).evaluateAchievements(userId);
     }
 
     @Test
@@ -219,6 +229,7 @@ class GoalContributionServiceImplTest {
 
         verify(goalContributionRepository, never()).save(any());
         verify(financialGoalRepository, never()).save(any());
+        verifyNoInteractions(achievementService);
     }
 
     @Test
@@ -300,6 +311,7 @@ class GoalContributionServiceImplTest {
         assertThat(response.id()).isEqualTo(existing.getId());
         verify(goalContributionRepository, never()).save(any());
         verify(financialGoalRepository, never()).save(any());
+        verify(achievementService).evaluateAchievements(userId);
     }
 
     @Test

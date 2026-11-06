@@ -5,8 +5,10 @@ import com.moneyos.dto.response.FinancialGoalResponse;
 import com.moneyos.entity.FinancialGoal;
 import com.moneyos.entity.User;
 import com.moneyos.enums.GoalPriority;
+import com.moneyos.enums.GoalStatus;
 import com.moneyos.exception.ResourceNotFoundException;
 import com.moneyos.repository.FinancialGoalRepository;
+import com.moneyos.service.AchievementService;
 import com.moneyos.service.FinancialActivityService;
 import com.moneyos.service.FinancialGoalService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
 
     private final FinancialGoalRepository goalRepository;
     private final FinancialActivityService financialActivityService;
+    private final AchievementService achievementService;
 
     @Override
     @Transactional(readOnly = true)
@@ -71,6 +74,7 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
 
         FinancialGoal saved = goalRepository.save(goal);
         financialActivityService.recordGoalCreatedActivity(user.getId(), saved);
+        evaluateIfCompleted(saved);
         return toResponse(saved);
     }
 
@@ -111,6 +115,7 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
 
         goal.recalculateStatus(LocalDate.now());
         FinancialGoal saved = goalRepository.save(goal);
+        evaluateIfCompleted(saved);
         return toResponse(saved);
     }
 
@@ -120,6 +125,13 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
         FinancialGoal goal = goalRepository.findByIdAndUser_Id(goalId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
         goalRepository.delete(goal);
+    }
+
+    private void evaluateIfCompleted(FinancialGoal goal) {
+        if (goal.getStatus() == GoalStatus.COMPLETED
+                || goal.getStatus() == GoalStatus.OVERACHIEVED) {
+            achievementService.evaluateAchievements(goal.getUser().getId());
+        }
     }
 
     private FinancialGoalResponse toResponse(FinancialGoal goal) {

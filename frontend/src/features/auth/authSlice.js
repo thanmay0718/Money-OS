@@ -59,11 +59,9 @@ export const login = createAsyncThunk(
       }
       return { token, user }
     } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        'Login failed'
+      const message = err.response
+        ? 'Please check your email address and password, then try again.'
+        : 'We couldn’t reach the sign-in service. Please try again in a moment.'
       return rejectWithValue(message)
     }
   }

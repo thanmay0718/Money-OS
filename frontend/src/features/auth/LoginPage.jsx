@@ -1,69 +1,79 @@
-import React, { useState, useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Navigate, useNavigate, Link, useSearchParams } from 'react-router-dom'
-import { login, clearAuthError } from './authSlice'
-import { toast } from '../../lib/toast'
-import MoneyOSLogo from '../../components/ui/MoneyOSLogo'
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Navigate, useNavigate, Link, useSearchParams } from "react-router-dom";
+import { CircleAlert } from "lucide-react";
+import { login, clearAuthError } from "./authSlice";
+import { toast } from "../../lib/toast";
+import MoneyOSLogo from "../../components/ui/MoneyOSLogo";
 
 export default function LoginPage() {
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const { token, status, error: reduxError } = useSelector((state) => state.auth)
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const {
+    token,
+    status,
+    error: reduxError,
+  } = useSelector((state) => state.auth);
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [localError, setLocalError] = useState(null)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [localError, setLocalError] = useState(null);
 
-  const oauthError = searchParams.get('oauthError')
+  const oauthError = searchParams.get("oauthError");
 
   useEffect(() => {
-    dispatch(clearAuthError())
-  }, [dispatch])
+    dispatch(clearAuthError());
+  }, [dispatch]);
 
   useEffect(() => {
     if (oauthError) {
-      setLocalError(oauthError)
-      toast.error('Authentication Error', oauthError)
+      setLocalError(oauthError);
+      toast.error("Authentication Error", oauthError);
     }
-  }, [oauthError])
+  }, [oauthError]);
 
-  if (token) return <Navigate to="/" replace />
+  if (token) return <Navigate to="/" replace />;
 
-  const displayError = localError || reduxError
+  const displayError = localError || reduxError;
 
   const validateEmail = (val) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
-  }
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  };
 
   const handleSubmit = async (event) => {
-    if (event) event.preventDefault()
-    setLocalError(null)
+    if (event) event.preventDefault();
+    setLocalError(null);
 
     if (!email.trim() || !password) {
-      setLocalError('Please enter both email and password.')
-      return
+      setLocalError("Please enter both email and password.");
+      return;
     }
     if (!validateEmail(email.trim())) {
-      setLocalError('Please enter a valid email address.')
-      return
+      setLocalError("Please enter a valid email address.");
+      return;
     }
 
     try {
-      await dispatch(login({ email: email.trim(), password })).unwrap()
-      toast.success('Welcome back to MoneyOS!')
-      navigate('/', { replace: true })
+      await dispatch(login({ email: email.trim(), password })).unwrap();
+      toast.success("Welcome back to Fintrack!");
+      navigate("/", { replace: true });
     } catch (err) {
-      toast.error('Sign In Failed', err || 'Please check your email and password.')
+      setLocalError(
+        typeof err === "string"
+          ? err
+          : "We couldn’t sign you in. Please try again.",
+      );
     }
-  }
+  };
 
   const handleOAuthRedirect = (provider) => {
-    setLocalError(null)
-    const rawApiUrl = import.meta.env.VITE_API_BASE_URL
-    const baseUrl = rawApiUrl && rawApiUrl.trim() ? rawApiUrl.trim().replace(/\/+$/, '') : ''
-    window.location.assign(`${baseUrl}/oauth2/authorization/${provider}`)
-  }
+    setLocalError(null);
+    const rawApiUrl = import.meta.env.VITE_API_BASE_URL;
+    const baseUrl =
+      rawApiUrl && rawApiUrl.trim() ? rawApiUrl.trim().replace(/\/+$/, "") : "";
+    window.location.assign(`${baseUrl}/oauth2/authorization/${provider}`);
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background relative overflow-hidden w-full py-12 px-4 selection:bg-primaryAccent selection:text-white">
@@ -80,7 +90,7 @@ export default function LoginPage() {
 
         {/* Title & Tagline */}
         <h2 className="text-2xl font-bold tracking-tight text-white mb-1 text-center font-sans">
-          Money<span className="text-primaryAccent">OS</span>
+          Fin<span className="text-primaryAccent">track</span>
         </h2>
         <p className="text-xs text-secondaryText mb-6 text-center font-medium">
           Modern personal finance & cash-flow intelligence
@@ -90,9 +100,21 @@ export default function LoginPage() {
         {displayError && (
           <div
             role="alert"
-            className="w-full mb-4 rounded-xl border border-negative/30 bg-negative/10 px-3.5 py-2.5 text-xs text-negative font-medium text-center"
+            className="mb-4 flex w-full items-start gap-3 rounded-xl border border-rose-400/25 bg-rose-400/[0.08] px-4 py-3 text-left shadow-[0_8px_24px_-16px_rgba(251,113,133,0.5)]"
           >
-            {displayError}
+            <CircleAlert
+              aria-hidden="true"
+              size={17}
+              className="mt-0.5 shrink-0 text-rose-300"
+            />
+            <div>
+              <p className="text-sm font-semibold text-rose-200">
+                Unable to sign in
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-rose-100/80">
+                {displayError}
+              </p>
+            </div>
           </div>
         )}
 
@@ -107,8 +129,8 @@ export default function LoginPage() {
               value={email}
               className="w-full px-5 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder-mutedText text-sm focus:outline-none focus:ring-2 focus:ring-primaryAccent/60 focus:border-transparent transition-all"
               onChange={(e) => {
-                setLocalError(null)
-                setEmail(e.target.value)
+                setLocalError(null);
+                setEmail(e.target.value);
               }}
             />
             <input
@@ -119,8 +141,8 @@ export default function LoginPage() {
               value={password}
               className="w-full px-5 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder-mutedText text-sm focus:outline-none focus:ring-2 focus:ring-primaryAccent/60 focus:border-transparent transition-all"
               onChange={(e) => {
-                setLocalError(null)
-                setPassword(e.target.value)
+                setLocalError(null);
+                setPassword(e.target.value);
               }}
             />
           </div>
@@ -131,16 +153,16 @@ export default function LoginPage() {
             {/* Primary Sign In Button */}
             <button
               type="submit"
-              disabled={status === 'loading'}
+              disabled={status === "loading"}
               className="w-full bg-primaryAccent text-white font-semibold px-5 py-3 rounded-full shadow-lg shadow-primaryAccent/25 hover:bg-accentSoft transition-all mb-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {status === 'loading' ? 'Signing in…' : 'Sign in'}
+              {status === "loading" ? "Signing in…" : "Sign in"}
             </button>
 
             {/* Google OAuth Button */}
             <button
               type="button"
-              onClick={() => handleOAuthRedirect('google')}
+              onClick={() => handleOAuthRedirect("google")}
               className="w-full flex items-center justify-center gap-2.5 bg-gradient-to-b from-[#232526] to-[#2d2e30] border border-white/10 rounded-full px-5 py-2.5 font-medium text-white shadow-md hover:brightness-110 active:scale-[0.99] transition mb-2.5 text-sm"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -167,7 +189,7 @@ export default function LoginPage() {
             {/* GitHub OAuth Button */}
             <button
               type="button"
-              onClick={() => handleOAuthRedirect('github')}
+              onClick={() => handleOAuthRedirect("github")}
               className="w-full flex items-center justify-center gap-2.5 bg-white/[0.06] border border-white/10 rounded-full px-5 py-2.5 font-medium text-white shadow-md hover:bg-white/[0.12] active:scale-[0.99] transition mb-3 text-sm"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -183,7 +205,7 @@ export default function LoginPage() {
             {/* Sign up redirection link */}
             <div className="w-full text-center mt-3">
               <span className="text-xs text-secondaryText">
-                Don&apos;t have an account?{' '}
+                Don&apos;t have an account?{" "}
                 <Link
                   to="/register"
                   className="underline text-white font-medium hover:text-accentSoft transition-colors"
@@ -199,7 +221,8 @@ export default function LoginPage() {
       {/* Social proof trust badge */}
       <div className="relative z-10 mt-10 flex flex-col items-center text-center">
         <p className="text-secondaryText text-xs md:text-sm mb-2.5">
-          Join <span className="font-semibold text-white">thousands</span> of mindful savers managing their cash flow with MoneyOS.
+          Join <span className="font-semibold text-white">thousands</span> of
+          mindful savers managing their cash flow with Fintrack.
         </p>
         <div className="flex -space-x-2">
           <img
@@ -225,5 +248,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

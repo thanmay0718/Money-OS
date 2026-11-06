@@ -16,6 +16,7 @@ import com.moneyos.repository.TransactionRepository;
 import com.moneyos.repository.UserRepository;
 import com.moneyos.service.FinancialActivityService;
 import com.moneyos.service.GoalContributionService;
+import com.moneyos.service.AchievementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,7 @@ public class GoalContributionServiceImpl implements GoalContributionService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final FinancialActivityService financialActivityService;
+    private final AchievementService achievementService;
 
     @Override
     @Transactional
@@ -65,6 +67,7 @@ public class GoalContributionServiceImpl implements GoalContributionService {
             var existing = goalContributionRepository.findByUser_IdAndIdempotencyKey(userId, request.idempotencyKey().trim());
             if (existing.isPresent()) {
                 GoalContribution c = existing.get();
+                achievementService.evaluateAchievements(userId);
                 return toResponse(c, toGoalResponse(c.getGoal()));
             }
         }
@@ -118,6 +121,7 @@ public class GoalContributionServiceImpl implements GoalContributionService {
         if (updatedGoal.getStatus() == GoalStatus.COMPLETED || updatedGoal.getStatus() == GoalStatus.OVERACHIEVED) {
             financialActivityService.recordGoalCompletedActivity(userId, updatedGoal);
         }
+        achievementService.evaluateAchievements(userId);
 
         return toResponse(savedContribution, toGoalResponse(updatedGoal));
     }

@@ -104,7 +104,15 @@ export default function GoalContributionModal({ goal, pockets = [], onClose, onS
         note: note.trim() || null,
       }
       const response = await addGoalContribution(goal.id, payload)
-      toast.success('Contribution added successfully.', `Allocated to "${goal.title}".`)
+      const goalCompleted = ['COMPLETED', 'OVERACHIEVED'].includes(
+        response.data?.updatedGoal?.status
+      )
+      toast.success(
+        goalCompleted ? 'Savings goal achieved!' : 'Contribution added successfully.',
+        goalCompleted
+          ? `You reached your savings target for "${goal.title}".`
+          : `Allocated to "${goal.title}".`
+      )
       if (onSuccess) {
         onSuccess(response.data)
       }

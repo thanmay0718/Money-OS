@@ -8,6 +8,8 @@ import com.moneyos.enums.GoalPriority;
 import com.moneyos.enums.GoalStatus;
 import com.moneyos.exception.ResourceNotFoundException;
 import com.moneyos.repository.FinancialGoalRepository;
+import com.moneyos.service.AchievementService;
+import com.moneyos.service.FinancialActivityService;
 import com.moneyos.service.impl.FinancialGoalServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,12 @@ class FinancialGoalServiceImplTest {
 
     @Mock
     private FinancialGoalRepository goalRepository;
+
+    @Mock
+    private FinancialActivityService financialActivityService;
+
+    @Mock
+    private AchievementService achievementService;
 
     @InjectMocks
     private FinancialGoalServiceImpl goalService;
@@ -86,6 +94,7 @@ class FinancialGoalServiceImplTest {
 
         assertThat(response.status()).isEqualTo(GoalStatus.COMPLETED);
         assertThat(response.progressPercentage()).isEqualByComparingTo(new BigDecimal("100.00"));
+        verify(achievementService).evaluateAchievements(userId);
     }
 
     @Test
@@ -106,6 +115,7 @@ class FinancialGoalServiceImplTest {
 
         assertThat(response.status()).isEqualTo(GoalStatus.OVERACHIEVED);
         assertThat(response.progressPercentage()).isEqualByComparingTo(new BigDecimal("110.00"));
+        verify(achievementService).evaluateAchievements(userId);
     }
 
     @Test

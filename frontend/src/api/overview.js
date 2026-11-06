@@ -12,7 +12,15 @@ export const overviewApi = {
 
   getActivityDetail: (id) => api.get(`${BASE}/activities/${id}`),
 
+  getGamification: () => api.get(`${BASE}/gamification`, { timeout: 20000 }),
+
+  evaluateAchievements: () => api.post(`${BASE}/achievements/evaluate`),
+
   triggerBackfill: () => api.post(`${BASE}/backfill`),
+
+  getRewards: () => api.get(`${BASE}/rewards`),
+
+  redeemReward: (rewardCode) => api.post(`${BASE}/rewards/redeem`, { rewardCode }),
 }
 
 export default overviewApi

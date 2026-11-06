@@ -99,6 +99,37 @@ export const triggerBackfill = createAsyncThunk(
   }
 )
 
+export const fetchGamificationOverview = createAsyncThunk(
+  'overview/fetchGamification',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await overviewApi.getGamification()
+      return response.data
+    } catch (err) {
+      const message = err.code === 'ECONNABORTED'
+        ? 'Progress request timed out.'
+        : err.response?.status
+          ? `Progress request failed with HTTP ${err.response.status}.`
+          : err.request
+            ? 'No response from the progress service.'
+            : err.message || 'Failed to load progress data.'
+      return rejectWithValue(message)
+    }
+  }
+)
+
+export const evaluateAchievements = createAsyncThunk(
+  'overview/evaluateAchievements',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await overviewApi.evaluateAchievements()
+      return response.data
+    } catch (err) {
+      return rejectWithValue('Failed to evaluate achievements')
+    }
+  }
+)
+
 const initialState = {
   summary: null,
   summaryStatus: 'idle', // idle | loading | succeeded | failed
@@ -123,6 +154,10 @@ const initialState = {
 
   selectedActivity: null,
   selectedActivityStatus: 'idle',
+
+  gamification: null,
+  gamificationStatus: 'idle', // idle | loading | succeeded | failed
+  gamificationError: null,
 
   filters: {
     dateRange: 'last12months', // 'last30days' | 'last6months' | 'last12months'
@@ -256,6 +291,20 @@ const overviewSlice = createSlice({
       })
       .addCase(fetchActivityDetail.rejected, (state) => {
         state.selectedActivityStatus = 'failed'
+      })
+
+      // Gamification
+      .addCase(fetchGamificationOverview.pending, (state) => {
+        state.gamificationStatus = 'loading'
+        state.gamificationError = null
+      })
+      .addCase(fetchGamificationOverview.fulfilled, (state, action) => {
+        state.gamificationStatus = 'succeeded'
+        state.gamification = action.payload
+      })
+      .addCase(fetchGamificationOverview.rejected, (state, action) => {
+        state.gamificationStatus = 'failed'
+        state.gamificationError = action.payload
       })
   },
 })

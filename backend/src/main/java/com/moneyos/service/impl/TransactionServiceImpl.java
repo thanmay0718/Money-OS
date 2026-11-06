@@ -14,6 +14,8 @@ import com.moneyos.repository.CategoryRepository;
 import com.moneyos.repository.MoneyPocketRepository;
 import com.moneyos.repository.TransactionRepository;
 import com.moneyos.repository.UserRepository;
+import com.moneyos.service.AchievementService;
+import com.moneyos.service.CoinService;
 import com.moneyos.service.FinancialActivityService;
 import com.moneyos.service.GoalContributionService;
 import com.moneyos.service.TransactionService;
@@ -40,6 +42,8 @@ public class TransactionServiceImpl implements TransactionService {
     private final CategoryRepository categoryRepository;
     private final GoalContributionService goalContributionService;
     private final FinancialActivityService financialActivityService;
+    private final CoinService coinService;
+    private final AchievementService achievementService;
 
     @Override
     @Transactional
@@ -170,6 +174,14 @@ public class TransactionServiceImpl implements TransactionService {
         // 5. Save the transaction
         Transaction saved = transactionRepository.save(transaction);
         financialActivityService.recordTransactionActivity(userId, saved);
+        coinService.awardCoins(
+                userId,
+                5,
+                "Transaction recorded: " + (saved.getDescription() != null ? saved.getDescription() : "Activity"),
+                "TRANSACTION",
+                saved.getId().toString()
+        );
+        achievementService.evaluateAchievements(userId);
 
         // 6. If goal contribution requested for this income, process it atomically
         GoalContributionResponse contributionResponse = null;

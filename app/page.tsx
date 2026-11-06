@@ -49,7 +49,7 @@ export default function Page() {
         darkBackground="#09090B"
         textColor={isDark ? "#F3F0E8" : "#151514"}
         accentColor={isDark ? "#F3F0E8" : "#151514"}
-        brand="Money OS"
+        brand="FinTech"
         navLinks={[
           { label: "Features", href: "#features" },
           { label: "How it works", href: "#how-it-works" },

@@ -29,4 +29,6 @@ public interface GoalContributionRepository extends JpaRepository<GoalContributi
     Optional<GoalContribution> findByUser_IdAndIdempotencyKey(UUID userId, String idempotencyKey);
 
     List<GoalContribution> findAllByUser_IdOrderByContributionDateAsc(UUID userId);
+
+    long countByUser_Id(UUID userId);
 }

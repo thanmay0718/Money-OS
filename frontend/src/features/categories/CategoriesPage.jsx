@@ -10,6 +10,7 @@ import {
   GlassSegmentedControl,
 } from '../../components/ui/glass'
 import { Tags, TrendingUp, TrendingDown, Plus } from '../../components/ui/Icons'
+import Pagination from '../../components/ui/Pagination'
 import { toast } from '../../lib/toast'
 import { fetchCategories, createCategory } from './categoriesSlice'
 
@@ -18,9 +19,17 @@ export default function CategoriesPage() {
   const { list: categories, status, error } = useSelector((state) => state.categories)
 
   const [activeTab, setActiveTab] = useState('ALL') // 'ALL' | 'INCOME' | 'EXPENSE'
+  const [currentPage, setCurrentPage] = useState(1)
   const [name, setName] = useState('')
   const [type, setType] = useState('EXPENSE')
   const [createStatus, setCreateStatus] = useState('idle')
+
+  const PAGE_SIZE = 8
+
+  // Reset page when tab changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeTab])
 
   useEffect(() => {
     dispatch(fetchCategories())
@@ -47,6 +56,12 @@ export default function CategoriesPage() {
     if (activeTab === 'ALL') return true
     return c.type === activeTab
   })
+
+  const totalPages = Math.ceil(filteredCategories.length / PAGE_SIZE) || 1
+  const paginatedCategories = filteredCategories.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  )
 
   const tabOptions = [
     { value: 'ALL', label: 'All Categories' },
@@ -134,38 +149,52 @@ export default function CategoriesPage() {
           )}
 
           {status !== 'loading' && filteredCategories.length > 0 ? (
-            <ul className="divide-y divide-[#292929]">
-              {filteredCategories.map((c) => {
-                const isExpense = c.type === 'EXPENSE'
-                return (
-                  <li
-                    key={c.id}
-                    className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.04] transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs border ${
-                          isExpense
-                            ? 'bg-[#F07891]/15 border-[#F07891]/30 text-[#F07891]'
-                            : 'bg-[#70D6A3]/15 border-[#70D6A3]/30 text-[#70D6A3]'
-                        }`}
-                      >
-                        {isExpense ? (
-                          <TrendingDown className="w-4 h-4 text-[#F07891]" />
-                        ) : (
-                          <TrendingUp className="w-4 h-4 text-[#70D6A3]" />
-                        )}
+            <div>
+              <ul className="divide-y divide-[#292929]">
+                {paginatedCategories.map((c) => {
+                  const isExpense = c.type === 'EXPENSE'
+                  return (
+                    <li
+                      key={c.id}
+                      className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.04] transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs border ${
+                            isExpense
+                              ? 'bg-[#F07891]/15 border-[#F07891]/30 text-[#F07891]'
+                              : 'bg-[#70D6A3]/15 border-[#70D6A3]/30 text-[#70D6A3]'
+                          }`}
+                        >
+                          {isExpense ? (
+                            <TrendingDown className="w-4 h-4 text-[#F07891]" />
+                          ) : (
+                            <TrendingUp className="w-4 h-4 text-[#70D6A3]" />
+                          )}
+                        </div>
+                        <span className="font-semibold text-sm text-[#FAFAFA]">{c.name}</span>
                       </div>
-                      <span className="font-semibold text-sm text-[#FAFAFA]">{c.name}</span>
-                    </div>
 
-                    <GlassBadge variant={isExpense ? 'negative' : 'positive'} size="sm">
-                      {c.type}
-                    </GlassBadge>
-                  </li>
-                )
-              })}
-            </ul>
+                      <GlassBadge variant={isExpense ? 'negative' : 'positive'} size="sm">
+                        {c.type}
+                      </GlassBadge>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {totalPages > 1 && (
+                <div className="p-4 border-t border-[#292929]">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredCategories.length}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </div>
           ) : status !== 'loading' ? (
             <div className="p-8 text-center text-[#A3A3A3]">
               <Tags className="w-8 h-8 mx-auto mb-2 text-[#737373]" />

@@ -1,5 +1,5 @@
 // src/features/pockets/PocketsPage.jsx
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -8,6 +8,7 @@ import {
   GlassButton,
 } from '../../components/ui/glass'
 import { ArrowLeftRight, Wallet } from '../../components/ui/Icons'
+import Pagination from '../../components/ui/Pagination'
 import PocketForm from './PocketForm'
 import { fetchPockets } from './pocketsSlice'
 import { fetchAllTransactions } from '../transactions/transactionsSlice'
@@ -23,6 +24,8 @@ export default function PocketsPage() {
   )
   const user = useSelector((state) => state.auth.user)
   const currencyCode = user?.currency || 'INR'
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 8
 
   useEffect(() => {
     dispatch(fetchPockets())
@@ -56,6 +59,12 @@ export default function PocketsPage() {
     }
     return balance
   }
+
+  const totalPages = Math.ceil(pockets.length / PAGE_SIZE) || 1
+  const paginatedPockets = pockets.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  )
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -106,54 +115,68 @@ export default function PocketsPage() {
           )}
 
           {pocketStatus !== 'loading' && pockets.length > 0 ? (
-            <ul className="divide-y divide-[#292929]">
-              {pockets.map((pocket) => {
-                const balance =
-                  pocket.balance != null && Number(pocket.balance) > 0
-                    ? Number(pocket.balance)
-                    : getPocketBalance(pocket.id)
+            <div>
+              <ul className="divide-y divide-[#292929]">
+                {paginatedPockets.map((pocket) => {
+                  const balance =
+                    pocket.balance != null && Number(pocket.balance) > 0
+                      ? Number(pocket.balance)
+                      : getPocketBalance(pocket.id)
 
-                return (
-                  <li
-                    key={pocket.id}
-                    className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.04] transition-colors"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-2xl glass-subtle border border-[#C3ABFA]/30 flex items-center justify-center text-[#C3ABFA] shadow-sm font-semibold text-sm">
-                        <Wallet className="w-5 h-5 text-[#C3ABFA]" />
+                  return (
+                    <li
+                      key={pocket.id}
+                      className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.04] transition-colors"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-2xl glass-subtle border border-[#C3ABFA]/30 flex items-center justify-center text-[#C3ABFA] shadow-sm font-semibold text-sm">
+                          <Wallet className="w-5 h-5 text-[#C3ABFA]" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm text-[#FAFAFA]">{pocket.name}</p>
+                          <p className="text-xs text-[#A3A3A3] mt-0.5">
+                            Created {new Date(pocket.createdAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-sm text-[#FAFAFA]">{pocket.name}</p>
-                        <p className="text-xs text-[#A3A3A3] mt-0.5">
-                          Created {new Date(pocket.createdAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
+
+                      <div className="text-right">
+                        <span
+                          className={`font-semibold text-base font-mono ${
+                            balance > 0
+                              ? 'text-[#70D6A3]'
+                              : balance < 0
+                              ? 'text-[#F07891]'
+                              : 'text-[#FAFAFA]'
+                          }`}
+                        >
+                          {formatCurrency(balance)}
+                        </span>
+                        <p className="text-[10px] text-[#A3A3A3] font-medium tracking-wide uppercase mt-0.5">
+                          {balance >= 0 ? 'Available' : 'Overdrawn'}
                         </p>
                       </div>
-                    </div>
+                    </li>
+                  )
+                })}
+              </ul>
 
-                    <div className="text-right">
-                      <span
-                        className={`font-semibold text-base font-mono ${
-                          balance > 0
-                            ? 'text-[#70D6A3]'
-                            : balance < 0
-                            ? 'text-[#F07891]'
-                            : 'text-[#FAFAFA]'
-                        }`}
-                      >
-                        {formatCurrency(balance)}
-                      </span>
-                      <p className="text-[10px] text-[#A3A3A3] font-medium tracking-wide uppercase mt-0.5">
-                        {balance >= 0 ? 'Available' : 'Overdrawn'}
-                      </p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
+              {totalPages > 1 && (
+                <div className="p-4 border-t border-[#292929]">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={pockets.length}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </div>
           ) : pocketStatus !== 'loading' ? (
             <div className="p-8 text-center text-[#A3A3A3]">
               <p className="text-sm font-medium text-[#FAFAFA]">No pockets configured yet</p>

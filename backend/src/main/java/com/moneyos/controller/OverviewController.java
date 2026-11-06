@@ -1,10 +1,13 @@
 package com.moneyos.controller;
 
+import com.moneyos.dto.response.AchievementResponse;
 import com.moneyos.dto.response.FinancialActivityResponse;
+import com.moneyos.dto.response.GamificationOverviewResponse;
 import com.moneyos.dto.response.HeatmapDayDto;
 import com.moneyos.dto.response.OverviewSummaryResponse;
 import com.moneyos.entity.User;
 import com.moneyos.enums.ActivityType;
+import com.moneyos.service.AchievementService;
 import com.moneyos.service.FinancialActivityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +28,36 @@ import java.util.UUID;
 public class OverviewController {
 
     private final FinancialActivityService financialActivityService;
+    private final AchievementService achievementService;
+    private final com.moneyos.service.CoinService coinService;
+
+    @GetMapping("/rewards")
+    public List<com.moneyos.dto.response.RewardItemResponse> getRewards(Authentication authentication) {
+        UUID userId = extractUserId(authentication);
+        return coinService.getAvailableRewards(userId);
+    }
+
+    @PostMapping("/rewards/redeem")
+    public org.springframework.http.ResponseEntity<Void> redeemReward(
+            Authentication authentication,
+            @jakarta.validation.Valid @RequestBody com.moneyos.dto.request.RedeemRewardRequest request
+    ) {
+        UUID userId = extractUserId(authentication);
+        coinService.redeemReward(userId, request.rewardCode());
+        return org.springframework.http.ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/gamification")
+    public GamificationOverviewResponse getGamification(Authentication authentication) {
+        UUID userId = extractUserId(authentication);
+        return achievementService.getGamificationOverview(userId);
+    }
+
+    @PostMapping("/achievements/evaluate")
+    public List<AchievementResponse> evaluateAchievements(Authentication authentication) {
+        UUID userId = extractUserId(authentication);
+        return achievementService.evaluateAchievements(userId);
+    }
 
     @GetMapping("/summary")
     public OverviewSummaryResponse getSummary(

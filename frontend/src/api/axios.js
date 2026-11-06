@@ -27,9 +27,11 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
+    const isLoginRequest = /\/api\/auth\/login\/?$/.test(error.config?.url || '')
+
     if (error.response) {
-      announceBackendStatus(error.response.status)
-    } else if (error.code !== 'ERR_CANCELED') {
+      if (!isLoginRequest) announceBackendStatus(error.response.status)
+    } else if (error.code !== 'ERR_CANCELED' && !isLoginRequest) {
       announceBackendStatus(null)
     }
 

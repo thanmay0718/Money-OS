@@ -2,6 +2,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Activity, RefreshCw } from '../../../components/ui/Icons'
+import CoinBalanceBadge from './CoinBalanceBadge'
 
 const PERIOD_OPTIONS = [
   { label: 'Last 30 Days', value: 'last30days' },
@@ -14,6 +15,10 @@ export default function OverviewHeader({
   onPeriodChange,
   onRefresh,
   isRefreshing,
+  totalCoins = 0,
+  loadingCoins = false,
+  coinsUnavailable = false,
+  onOpenRewards,
 }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -34,7 +39,15 @@ export default function OverviewHeader({
         </p>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Coin Balance Badge */}
+        <CoinBalanceBadge
+          totalCoins={totalCoins}
+          loading={loadingCoins}
+          error={coinsUnavailable}
+          onClick={onOpenRewards}
+        />
+
         {/* Period Selector Tabs */}
         <div className="inline-flex rounded-xl border border-white/10 bg-[#161616]/80 p-1">
           {PERIOD_OPTIONS.map((opt) => {

@@ -11,6 +11,7 @@ import budgetReducer from '../features/budget/budgetSlice'
 import recurringReducer from '../features/recurring/recurringSlice'
 import netWorthReducer from '../features/networth/netWorthSlice'
 import overviewReducer from '../features/overview/overviewSlice'
+import aiReducer from '../features/ai/aiSlice'
 
 const appReducer = combineReducers({
   auth: authReducer,
@@ -24,6 +25,7 @@ const appReducer = combineReducers({
   recurring: recurringReducer,
   networth: netWorthReducer,
   overview: overviewReducer,
+  ai: aiReducer,
 })
 
 const rootReducer = (state, action) => {
@@ -48,6 +50,7 @@ const rootReducer = (state, action) => {
       recurring: undefined,
       networth: undefined,
       overview: undefined,
+      ai: undefined,
     }
   }
   return appReducer(state, action)

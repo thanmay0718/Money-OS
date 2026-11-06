@@ -7,6 +7,7 @@ import {
   fetchActivities,
   fetchMoreActivities,
   fetchActivityDetail,
+  fetchGamificationOverview,
   triggerBackfill,
   setFilterDateRange,
   setFilterTypes,
@@ -17,10 +18,13 @@ import {
 } from './overviewSlice'
 import OverviewHeader from './components/OverviewHeader'
 import ActivitySummaryCards from './components/ActivitySummaryCards'
+import StreakCard from './components/StreakCard'
 import ContributionSkyline from './ContributionSkyline'
+import AchievementGallery from './components/AchievementGallery'
 import ActivityFilters from './components/ActivityFilters'
 import ActivityTimeline from './components/ActivityTimeline'
 import ActivityDetailsModal from './components/ActivityDetailsModal'
+import RewardsStoreModal from './components/RewardsStoreModal'
 import { Activity, Sparkles } from '../../components/ui/Icons'
 import { toast } from '../../lib/toast'
 
@@ -37,6 +41,9 @@ export default function OverviewPage() {
     activitiesStatus,
     loadingMore,
     selectedActivity,
+    gamification,
+    gamificationStatus,
+    gamificationError,
     filters,
     selectedDate,
   } = useSelector((state) => state.overview)
@@ -44,6 +51,13 @@ export default function OverviewPage() {
   const [sortOrder, setSortOrder] = useState('desc')
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [timelinePage, setTimelinePage] = useState(0)
+  const [showRewards, setShowRewards] = useState(false)
+
+  // Reset page when filters change
+  useEffect(() => {
+    setTimelinePage(0)
+  }, [filters.dateRange, filters.types, filters.search, selectedDate])
 
   // Calculate start/end date strings based on selected period
   const dateBounds = useMemo(() => {
@@ -72,7 +86,24 @@ export default function OverviewPage() {
       .catch(() => {
         // Backfill silently handled
       })
+    // Load gamification data (streaks, achievements, coins)
+    dispatch(fetchGamificationOverview())
   }, [dispatch])
+
+  // Trigger celebratory milestone toast if newly unlocked
+  useEffect(() => {
+    if (gamification?.recentUnlocks && Array.isArray(gamification.recentUnlocks)) {
+      const oneMinuteAgo = Date.now() - 60 * 1000
+      gamification.recentUnlocks.forEach((unlock) => {
+        if (unlock.unlockedAt && new Date(unlock.unlockedAt).getTime() > oneMinuteAgo) {
+          toast.success(
+            `Achievement Unlocked: ${unlock.title}`,
+            `+${unlock.coinReward} Coins - ${unlock.description}`
+          )
+        }
+      })
+    }
+  }, [gamification?.recentUnlocks])
 
   // Load summary and heatmap when date range changes
   useEffect(() => {
@@ -93,8 +124,8 @@ export default function OverviewPage() {
   // Load timeline activities whenever filters or date bounds change
   useEffect(() => {
     const params = {
-      page: 0,
-      size: 20,
+      page: timelinePage,
+      size: 10,
       startDate: selectedDate ? selectedDate : dateBounds.startDate,
       endDate: selectedDate ? selectedDate : dateBounds.endDate,
       sort: sortOrder === 'asc' ? 'activityDate,asc' : 'activityDate,desc',
@@ -108,7 +139,7 @@ export default function OverviewPage() {
     }
 
     dispatch(fetchActivities(params))
-  }, [dispatch, dateBounds, filters.types, filters.search, selectedDate, sortOrder])
+  }, [dispatch, dateBounds, filters.types, filters.search, selectedDate, sortOrder, timelinePage])
 
   // Manual refresh
   const handleRefresh = async () => {
@@ -121,6 +152,7 @@ export default function OverviewPage() {
             endDate: dateBounds.endDate,
           })
         ).unwrap(),
+        dispatch(fetchGamificationOverview()).unwrap(),
         dispatch(
           fetchHeatmap({
             startDate: dateBounds.startDate,
@@ -222,6 +254,10 @@ export default function OverviewPage() {
         onPeriodChange={(period) => dispatch(setFilterDateRange(period))}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
+        totalCoins={gamification?.totalCoins || 0}
+        loadingCoins={gamificationStatus === 'loading' && !gamification}
+        coinsUnavailable={gamificationStatus === 'failed'}
+        onOpenRewards={() => setShowRewards(true)}
       />
 
       {/* 2. Top Financial Activity Summary Cards */}
@@ -235,6 +271,14 @@ export default function OverviewPage() {
             dispatch(setFilterTypes(['TRANSACTION_INCOME', 'TRANSACTION_EXPENSE']))
           }
         }}
+      />
+
+      {/* 2b. Habit & Consistency Streak System */}
+      <StreakCard
+        streak={gamification?.streak}
+        loading={gamificationStatus === 'loading' && !gamification}
+        error={gamificationStatus === 'failed' ? gamificationError : null}
+        onRetry={() => dispatch(fetchGamificationOverview())}
       />
 
       {/* 3. GitHub-Inspired 2D/3D Activity Skyline Heatmap */}
@@ -280,6 +324,14 @@ export default function OverviewPage() {
         )}
       </div>
 
+      {/* 3b. Financial Achievement Badges & Progression Gallery */}
+      <AchievementGallery
+        achievements={gamification?.achievements || []}
+        loading={gamificationStatus === 'loading' && !gamification}
+        error={gamificationStatus === 'failed' ? gamificationError : null}
+        onRetry={() => dispatch(fetchGamificationOverview())}
+      />
+
       {/* 4. Unified Chronological Activity Timeline Feed */}
       <div
         id="activity-timeline-section"
@@ -320,6 +372,11 @@ export default function OverviewPage() {
           hasMore={!activitiesPage.last}
           onLoadMore={handleLoadMore}
           onItemClick={handleActivityClick}
+          currentPage={(activitiesPage.number ?? timelinePage) + 1}
+          totalPages={activitiesPage.totalPages || 1}
+          totalItems={activitiesPage.totalElements || 0}
+          pageSize={activitiesPage.size || 10}
+          onPageChange={(page) => setTimelinePage(page - 1)}
         />
       </div>
 
@@ -331,6 +388,12 @@ export default function OverviewPage() {
           setModalOpen(false)
           dispatch(clearSelectedActivity())
         }}
+      />
+
+      {/* 6. Rewards & Coin Marketplace Modal */}
+      <RewardsStoreModal
+        isOpen={showRewards}
+        onClose={() => setShowRewards(false)}
       />
     </div>
   )

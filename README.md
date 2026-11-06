@@ -1,6 +1,6 @@
-# MoneyOS
+# FinTech
 
-MoneyOS is a personal finance application organized as a frontend/backend
+FinTech is a personal finance application organized as a frontend/backend
 monorepo.
 
 ## Project structure

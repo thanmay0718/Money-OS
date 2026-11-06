@@ -1,47 +1,48 @@
-import React, { useState, useEffect } from 'react'
-import { useSelector } from 'react-redux'
-import { Navigate, useNavigate } from 'react-router-dom'
-import SculptureHero from '../../components/ui/sculpture-hero'
-import { HERO_IMAGES } from '../../lib/hero-images'
-import TrustStrip from '../../components/landing/TrustStrip'
-import FeaturesBento from '../../components/landing/FeaturesBento'
-import HowItWorks from '../../components/landing/HowItWorks'
-import SecuritySection from '../../components/landing/SecuritySection'
-import FaqSection from '../../components/landing/FaqSection'
-import FinalCta from '../../components/landing/FinalCta'
-import LandingFooter from '../../components/landing/LandingFooter'
-import ThemeToggle from '../../components/landing/ThemeToggle'
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { Navigate, useNavigate } from "react-router-dom";
+import SculptureHero from "../../components/ui/sculpture-hero";
+import { HERO_IMAGES } from "../../lib/hero-images";
+import TrustStrip from "../../components/landing/TrustStrip";
+import FeaturesBento from "../../components/landing/FeaturesBento";
+import HowItWorks from "../../components/landing/HowItWorks";
+import GamificationInfo from "../../components/landing/GamificationInfo";
+import SecuritySection from "../../components/landing/SecuritySection";
+import FaqSection from "../../components/landing/FaqSection";
+import FinalCta from "../../components/landing/FinalCta";
+import LandingFooter from "../../components/landing/LandingFooter";
+import ThemeToggle from "../../components/landing/ThemeToggle";
 
 export default function LandingPage() {
-  const token = useSelector((state) => state.auth.token)
-  const navigate = useNavigate()
-  const [theme, setTheme] = useState('light')
-  const isDark = theme === 'dark'
+  const token = useSelector((state) => state.auth.token);
+  const navigate = useNavigate();
+  const [theme, setTheme] = useState("light");
+  const isDark = theme === "dark";
 
   // Listen to clicks on SculptureHero's internal nav theme toggle button
   // so the entire page stays 100% in sync with the hero nav button
   useEffect(() => {
     const handleHeroThemeClick = (e) => {
-      const btn = e.target.closest('.sh-theme')
+      const btn = e.target.closest(".sh-theme");
       if (btn) {
-        setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
+        setTheme((prev) => (prev === "dark" ? "light" : "dark"));
       }
-    }
-    document.addEventListener('click', handleHeroThemeClick)
-    return () => document.removeEventListener('click', handleHeroThemeClick)
-  }, [])
+    };
+    document.addEventListener("click", handleHeroThemeClick);
+    return () => document.removeEventListener("click", handleHeroThemeClick);
+  }, []);
 
   // Authenticated visitors hitting the landing page are redirected to the dashboard
   if (token) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
     <div
       className={`w-full min-h-screen flex flex-col font-sans transition-colors duration-500 overflow-x-hidden ${
         isDark
-          ? 'bg-[#09090B] text-[#F3F0E8] selection:bg-[#F3F0E8]/20 selection:text-[#F3F0E8]'
-          : 'bg-[#EBE9E5] text-[#151514] selection:bg-[#151514]/15 selection:text-[#151514]'
+          ? "bg-[#09090B] text-[#F3F0E8] selection:bg-[#F3F0E8]/20 selection:text-[#F3F0E8]"
+          : "bg-[#EBE9E5] text-[#151514] selection:bg-[#151514]/15 selection:text-[#151514]"
       }`}
     >
       {/* 1. Sculpture Hero (Dynamically synced to Light & Dark theme) */}
@@ -55,12 +56,13 @@ export default function LandingPage() {
         themeToggle={true}
         background="#EBE9E5"
         darkBackground="#09090B"
-        textColor={isDark ? '#F3F0E8' : '#151514'}
-        accentColor={isDark ? '#F3F0E8' : '#151514'}
-        brand="Money OS"
+        textColor={isDark ? "#F3F0E8" : "#151514"}
+        accentColor={isDark ? "#F3F0E8" : "#151514"}
+        brand="Fintrack"
         navLinks={[
           { label: "Features", href: "#features" },
           { label: "How it works", href: "#how-it-works" },
+          { label: "Rewards", href: "#gamification" },
           { label: "Security", href: "#security" },
           { label: "FAQ", href: "#faq" },
         ]}
@@ -68,7 +70,7 @@ export default function LandingPage() {
         eyebrow="The operating system for your money"
         headline={"Money that\nmoves with you."}
         headlineAccent="moves with you."
-        body="Net worth, cash flow, and goals in one calm place. Money OS connects the dots across your accounts and tells you what to do next."
+        body="Net worth, cash flow, and goals in one calm place. Fintrack connects the dots across your accounts and tells you what to do next."
         primaryCta={{ label: "Get started free", href: "/signup" }}
         secondaryCta={{ label: "See how it works", href: "#how-it-works" }}
         hint="Move across the form"
@@ -103,6 +105,9 @@ export default function LandingPage() {
       {/* 5. #how-it-works: Three Core Steps */}
       <HowItWorks isDark={isDark} />
 
+      {/* 5b. #gamification: Earn Coins & Achievements */}
+      <GamificationInfo isDark={isDark} />
+
       {/* 6. #security: Plain-English Guarantees & Privacy Mode */}
       <SecuritySection isDark={isDark} />
 
@@ -112,12 +117,12 @@ export default function LandingPage() {
       {/* 8. Final Call to Action */}
       <FinalCta
         isDark={isDark}
-        onSignUp={() => navigate('/signup')}
-        onSignIn={() => navigate('/login')}
+        onSignUp={() => navigate("/signup")}
+        onSignIn={() => navigate("/login")}
       />
 
       {/* 9. Landing Footer */}
       <LandingFooter isDark={isDark} />
     </div>
-  )
+  );
 }

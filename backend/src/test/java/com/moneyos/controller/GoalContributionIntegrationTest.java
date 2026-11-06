@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moneyos.dto.request.GoalContributionRequest;
 import com.moneyos.dto.request.TransactionRequest;
 import com.moneyos.entity.*;
+import com.moneyos.enums.AchievementCode;
 import com.moneyos.enums.GoalStatus;
 import com.moneyos.repository.*;
 import com.moneyos.security.JwtService;
@@ -57,6 +58,12 @@ public class GoalContributionIntegrationTest {
     private GoalContributionRepository contributionRepository;
 
     @Autowired
+    private UserAchievementRepository userAchievementRepository;
+
+    @Autowired
+    private UserCoinLedgerRepository userCoinLedgerRepository;
+
+    @Autowired
     private MoneyPocketService moneyPocketService;
 
     @Autowired
@@ -73,6 +80,8 @@ public class GoalContributionIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        userAchievementRepository.deleteAll();
+        userCoinLedgerRepository.deleteAll();
         contributionRepository.deleteAll();
         transactionRepository.deleteAll();
         goalRepository.deleteAll();
@@ -164,6 +173,37 @@ public class GoalContributionIntegrationTest {
         BigDecimal postExpense = transactionRepository.sumVolumeByUserIdAndType(user1.getId(), TransactionType.EXPENSE);
         assertThat(postIncome).isEqualByComparingTo("50000.00");
         assertThat(postExpense == null || postExpense.compareTo(BigDecimal.ZERO) == 0).isTrue();
+    }
+
+    @Test
+    void overachievingGoal_unlocksGoalCrusherAndAwardsCoins() throws Exception {
+        goal1.setTargetAmount(new BigDecimal("1000.00"));
+        goalRepository.save(goal1);
+
+        GoalContributionRequest request = new GoalContributionRequest(
+                pocket1.getId(),
+                new BigDecimal("1500.00"),
+                LocalDate.now(),
+                "Complete the goal",
+                "goal-crusher-contribution"
+        );
+
+        mockMvc.perform(post("/api/goals/" + goal1.getId() + "/contributions")
+                        .header(HttpHeaders.AUTHORIZATION, tokenUser1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.updatedGoal.status").value("OVERACHIEVED"));
+
+        var goalCrusher = userAchievementRepository
+                .findByUser_IdAndAchievementCode(user1.getId(), AchievementCode.GOAL_CRUSHER)
+                .orElseThrow();
+        assertThat(goalCrusher.isUnlocked()).isTrue();
+
+        mockMvc.perform(get("/api/overview/gamification")
+                        .header(HttpHeaders.AUTHORIZATION, tokenUser1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalCoins").value(org.hamcrest.Matchers.greaterThan(0)));
     }
 
     @Test
